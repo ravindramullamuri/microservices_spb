@@ -1,0 +1,10 @@
+build:
+  version: "3.0"
+cards:
+  message: "Welcome to EazyBank cards related local APIs"
+  contactDetails:
+    name: "Navya - Developer"
+    email: "navya@eazybank.com"
+  onCallSupport:
+    - (770) 555-1234
+    - (770) 523-1345

@@ -1,0 +1,14 @@
+spring:
+  config:
+    activate:
+      on-profile: "prod"
+build:
+  version: "1.0"
+accounts:
+  message: "Welcome to EazyBank accounts related Prod APIs "
+  contactDetails:
+    name: "Ravindra - Developer"
+    email: "ravindra@eazybank.com"
+  onCallSupport:
+    - (939) 555-1234
+    - (939) 523-1345

@@ -1,6 +1,7 @@
 package com.eazybytes.accounts.controller;
 
 import com.eazybytes.accounts.constants.AccountsConstants;
+import com.eazybytes.accounts.dto.AccountsContactInfoDto;
 import com.eazybytes.accounts.dto.CustomerDto;
 import com.eazybytes.accounts.dto.ErrorResponseDto;
 import com.eazybytes.accounts.dto.ResponseDto;
@@ -44,6 +45,8 @@ public class AccountsController {
     private String buildVersion;
     @Autowired
     private Environment environment;
+    @Autowired
+    private  AccountsContactInfoDto accountsContactInfoDto;
     @Operation(
             summary = "Create Account REST API",
             description = "REST API to create new Customer &  Account inside EazyBank"
@@ -216,5 +219,28 @@ public class AccountsController {
                 .body(environment.getProperty("JAVA_HOME"));
         /*return  ResponseEntity.status(HttpStatus.OK)
                 .body(environment.getProperty("MAVEN_HOME"));*/
+    }
+    @Operation(
+            summary = "Accounts Environment Information",
+            description = "REST API to get the current Environment version information using this endpoint."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Http status Ok"
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "HTTP Status Internal Server Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            )
+    })
+    @GetMapping("/contact-info")
+    public ResponseEntity<AccountsContactInfoDto> contactInfo(){
+        return  ResponseEntity.status(HttpStatus.OK)
+                .body(accountsContactInfoDto);
+
     }
 }

@@ -1,0 +1,10 @@
+build:
+  version: "1.0"
+cards:
+  message: "Welcome to EazyBank cards related Prod APIs"
+  contactDetails:
+    name: "Ravindra - Developer"
+    email: "ravindra@eazybank.com"
+  onCallSupport:
+    - (949) 555-1234
+    - (949) 523-1345

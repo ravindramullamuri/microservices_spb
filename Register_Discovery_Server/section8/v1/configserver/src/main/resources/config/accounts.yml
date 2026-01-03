@@ -1,0 +1,10 @@
+build:
+  version: "3.0"
+accounts:
+  message: "Welcome to EazyBank accounts related local APIs "
+  contactDetails:
+    name: "Gathvik - Developer"
+    email: "gathvik@eazybank.com"
+  onCallSupport:
+    - (939) 555-1234
+    - (978) 523-1345

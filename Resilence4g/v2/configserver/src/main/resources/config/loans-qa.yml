@@ -1,0 +1,10 @@
+build:
+  version: "2.0"
+loans:
+  message: "Welcome to EazyBank Loans related QA APIs"
+  contactDetails:
+    name: "Navya - Developer"
+    email: "navya@eazybank.com"
+  onCallSupport:
+    - (770) 555-1234
+    - (770) 523-1345

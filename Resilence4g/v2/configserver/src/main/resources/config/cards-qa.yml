@@ -1,0 +1,10 @@
+build:
+  version: "2.0"
+cards:
+  message: "Welcome to EazyBank cards related QA APIs"
+  contactDetails:
+    name: "Gathvik - Developer"
+    email: "gathvik@eazybank.com"
+  onCallSupport:
+    - (939) 555-1234
+    - (939) 523-1345

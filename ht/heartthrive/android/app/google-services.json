@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "90303225780",
+    "project_id": "heartthrive",
+    "storage_bucket": "heartthrive.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:90303225780:android:95ba9c9e789adc2e885ce1",
+        "android_client_info": {
+          "package_name": "com.heartthrive.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJTvwwVgnGEXhqnh2FLfXHe3L4u_zrA28"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

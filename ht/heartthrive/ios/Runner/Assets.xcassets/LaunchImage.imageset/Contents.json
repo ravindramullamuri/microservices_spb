@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "filename" : "iPhone_8_Plus__iPhone_7_Plus__iPhone_6s_Plus__iPhone_6_Plus_portrait.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "iPhone_16__iPhone_15_Pro__iPhone_15__iPhone_14_Pro_portrait.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "iPhone_17_Pro_Max__iPhone_16_Pro_Max_portrait.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

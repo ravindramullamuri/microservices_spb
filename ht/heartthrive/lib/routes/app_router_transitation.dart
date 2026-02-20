@@ -120,7 +120,7 @@ class AppRouter {
         page = const HomeMaskPage();
         break;
       case home:
-        page = const MainPage();
+        page = MainPage();
         break;
       case doctorHome:
         page = const DoctorHomePage();

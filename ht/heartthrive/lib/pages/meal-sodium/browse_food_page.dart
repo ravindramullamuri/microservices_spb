@@ -27,6 +27,7 @@ class FoodItem {
   final int fdcId;
   final String description;
   final String? brandName;
+  final String? ingredients;
   final double servingSize;
   final String servingUnit;
   final List<Nutrient> nutrients;
@@ -37,6 +38,7 @@ class FoodItem {
     required this.fdcId,
     required this.description,
     this.brandName,
+    this.ingredients,
     required this.servingSize,
     required this.servingUnit,
     required this.nutrients,
@@ -49,6 +51,7 @@ class FoodItem {
       fdcId: (json['fdcId'] as num?)?.toInt() ?? 0,
       description: json['description'] ?? '',
       brandName: json['brandName'],
+      ingredients: json['ingredients'],
       servingSize: (json['servingSize'] as num?)?.toDouble() ?? 0.0,
       servingUnit: json['servingUnit'] ?? '',
       nutrients: (json['nutrients'] as List<dynamic>? ?? [])
@@ -182,7 +185,7 @@ class FoodNotifier extends StateNotifier<AsyncValue<List<FoodItem>>> {
   Future<List<FoodItem>> _fetch() async {
     final service = ref.read(foodServiceProvider);
     final token = await SecureStorageUtils().read(StorageKeys.accessToken);
-    
+
 
     if (token == null) {
       throw Exception('No token');
@@ -397,6 +400,7 @@ class _MealMenuPageState extends ConsumerState<MealMenuPage> {
                               await AppRouter.navigateToAddMeal(
                                 context,
                                 editData: editData,
+                                isCustomMode: true
                               );
                             },
                             child: Container(
@@ -566,6 +570,7 @@ class _MealMenuPageState extends ConsumerState<MealMenuPage> {
                 await AppRouter.navigateToAddMeal(
                   context,
                   editData: editData,
+                  isCustomMode: true
                 );
               },
               icon: const Icon(Icons.add, color: Colors.white),
@@ -615,9 +620,9 @@ class _MealMenuPageState extends ConsumerState<MealMenuPage> {
 // FOOD TILE
 // ---------------------------------------------------------------------------
 
-class _FoodTile extends StatelessWidget {
+class _FoodTileOld extends StatelessWidget {
   final FoodItem item;
-  const _FoodTile({required this.item});
+  const _FoodTileOld({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -685,3 +690,240 @@ class _FoodTile extends StatelessWidget {
     );
   }
 }
+class _FoodTile extends StatefulWidget {
+  final FoodItem item;
+  const _FoodTile({required this.item});
+
+  @override
+  State<_FoodTile> createState() => _FoodTileState();
+}
+
+class _FoodTileState extends State<_FoodTile> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final showBrand = item.brandName != null &&
+        !item.brandName!.contains('NOT A BRANDED ITEM') &&
+        !item.brandName!.contains('Custom');
+    return InkWell(
+      onTap: () async {
+        final result = await AppRouter.navigateToAddMeal(
+          context,
+          editData: MealEditData(
+            id: item.id,
+            name: item.description,
+            quantity: item.servingSize.toString(),
+            servingUnit: item.servingUnit,
+            calories: item.nutrients.qty("Calories"),
+            sodium: item.nutrients.qty("Sodium"),
+            carbs:  item.nutrients.qty("Carbohydrates"),
+            protein: item.nutrients.qty("Protein"),
+            fats: item.nutrients.qty("Fat"),
+            mealTypeId: null,
+          ),
+        );
+
+        if (result == true) {
+
+        }
+      },
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              title: Text(
+                '${item.description} (${item.servingSize} ${item.servingUnit})',
+                style: AppTheme.title20.copyWith(
+                  fontSize: AppTheme.responsiveTitleFontSize(context),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                '${showBrand ? 'Brand : ${item.brandName}\n' : ''}'
+                    'Contains ${item.nutrients.valueOf("Sodium")} Sodium',
+                style: AppTheme.body14.copyWith(
+                  fontSize: AppTheme.responsiveParaFontSize(context),
+                ),
+              ),
+              trailing: IconButton(
+                icon: const Icon(
+                  Icons.add_circle,
+                  color: AppTheme.primaryColor,
+                ),
+                onPressed: () async {
+                  final result = await AppRouter.navigateToAddMeal(
+                    context,
+                    editData: MealEditData(
+                      id: item.id,
+                      name: item.description,
+                      quantity: item.servingSize.toString(),
+                      servingUnit: item.servingUnit,
+                      calories: item.nutrients.qty("Calories"),
+                      sodium: item.nutrients.qty("Sodium"),
+                      carbs: item.nutrients.qty("Carbohydrates"),
+                      protein: item.nutrients.qty("Protein"),
+                      fats: item.nutrients.qty("Fat"),
+                      mealTypeId: null,
+                    ),
+                  );
+
+                  if (result == true) {}
+                },
+              ),
+            ),
+
+            /// SHOW / HIDE INGREDIENTS BUTTON
+            item.ingredients != null? Padding(
+              padding:  EdgeInsets.only(top: 3,left: 16,bottom: 10),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _expanded = !_expanded;
+                  });
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF95020A),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _expanded ? 'Hide ingredients' : 'View ingredients',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF95020A),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ):SizedBox(),
+
+            /// INGREDIENTS CONTENT
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: _expanded
+                  ? Padding(
+                padding: const EdgeInsets.only(left: 16,bottom: 10,right: 10),
+                child: Container(
+                  padding:const EdgeInsets.all(8),
+                  width: deviceWidth(context),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.rectangle,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade200,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    item.ingredients ?? 'No ingredients',
+                    style: AppTheme.body14.copyWith(
+                      fontSize:
+                      AppTheme.responsiveParaFontSize(context),
+                    ),
+                  ),
+                ),
+              )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+class FoodCard extends StatefulWidget {
+  final FoodItem item;
+  const FoodCard({super.key, required this.item});
+
+  @override
+  State<FoodCard> createState() => _FoodCardState();
+}
+
+class _FoodCardState extends State<FoodCard> {
+  bool isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(
+              '${item.description} (${item.servingSize} ${item.servingUnit})',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              '${item.nutrients.qty("Calories").toStringAsFixed(0)} kcal\n'
+                  'Contains ${item.nutrients.valueOf("Sodium")} Sodium',
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    isExpanded
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      isExpanded = !isExpanded;
+                    });
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add_circle,
+                      color: AppTheme.primaryColor),
+                  onPressed: () async {
+                    await AppRouter.navigateToAddMeal(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            child: isExpanded
+                ? Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(item.description ?? ''),
+            )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

@@ -116,7 +116,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
     _loadBrowseMedications();
     _browseScrollController.addListener(() {
       if (_browseScrollController.position.pixels >=
-              _browseScrollController.position.maxScrollExtent - 120 &&
+          _browseScrollController.position.maxScrollExtent - 120 &&
           !_isBrowseLoading &&
           _hasMoreBrowseData) {
         _loadBrowseMedications();
@@ -382,131 +382,87 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
     ref.read(notificationProvider.notifier).loadFirstPage();
   }
 
+  //DEmoTeST123
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: AppTheme.appBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppTheme.primaryColor,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular( widget.isHome!?24:0),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        print("demoprint121");
+        if (widget.navFromPage == NavPageType.home.name ||
+            widget.navFromPage == NavPageType.addMedication.name) {
+          AppRouter.replaceWithHome(context);
+        } else {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: AppTheme.appBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: AppTheme.primaryColor,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular( widget.isHome!?24:0),
+            ),
           ),
-        ),
-        leading:widget.isHome!? ProfileAvatar(): GestureDetector(
-          onTap: () {
-            if (widget.navFromPage == NavPageType.home.name ||
-                widget.navFromPage == NavPageType.addMedication.name) {
-              AppRouter.replaceWithHome(context);
-            } else {
-              Navigator.pop(context);
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Image.asset("lib/assets/Frame.png"),
-          ),
-        ),
-        title: Center(child: const Text('Medication')),
-        actions: [
-          widget.isHome!?Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: NotificationBadgeIcon(),
-          ):actionMenuItemResponse(
-            context,
-            onOpened: () {
-              _skipNextPopRefresh = true;
-              debugPrint('Menu opened');
-            },
-            onCanceled: () {
-              _skipNextPopRefresh = true;
-              debugPrint('Menu dismissed (outside tap)');
-              // ❗ stop API calls here if needed
-            },
-            onSelected: (result) {
-              debugPrint('Selected: $result');
-              if (result == ActionMenuResult.goHome) {
-                AppRouter.navigateToHome(context);
+          leading:widget.isHome!? ProfileAvatar(): GestureDetector(
+            onTap: () {
+              print("demoprint121");
+              if (widget.navFromPage == NavPageType.home.name ||
+                  widget.navFromPage == NavPageType.addMedication.name) {
+                AppRouter.replaceWithHome(context);
+              } else {
+                Navigator.pop(context);
               }
             },
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Image.asset("lib/assets/Frame.png"),
+            ),
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: () => _refresh(),
-            child: Column(
-              children: [
-                // Daily Medication Intake Card - UPDATED DESIGN
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8,
-                  ),
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        spreadRadius: 1,
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                           Text(
-                            'Daily Medication Intake',
-                            style: deviceWidth(context) > 750 ? AppTheme.title20:AppTheme.title16,
-                          ),
-                          Text(
-                            '${_intakeMedicationSummary?.data?.totalTaken ?? 0}/${_intakeMedicationSummary?.data?.totalScheduled ?? 0} Dose',
-                            style: deviceWidth(context) > 750 ? AppTheme.title20:AppTheme.title16,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Progress Bar Section
-                      _buildMedicationSummary(),
-                      // Tab buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildTabButton(0, 'All', 'lib/assets/Calendar.png'),
-                          _buildTabButton(1, 'Morning', 'lib/assets/Sun.png'),
-                          _buildTabButton(
-                            2,
-                            'Afternoon',
-                            'lib/assets/Dawn.png',
-                          ),
-                          _buildTabButton(
-                            3,
-                            'Evening',
-                            'lib/assets/Vaporwave.png',
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Medication List and Browse Medication buttons
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+          title: Center(child: const Text('Medication')),
+          actions: [
+            widget.isHome!?Padding(
+              padding: EdgeInsets.only(right: 16.0),
+              child: NotificationBadgeIcon(),
+            ):actionMenuItemResponse(
+              context,
+              onOpened: () {
+                _skipNextPopRefresh = true;
+                debugPrint('Menu opened');
+              },
+              onCanceled: () {
+                _skipNextPopRefresh = true;
+                debugPrint('Menu dismissed (outside tap)');
+                // ❗ stop API calls here if needed
+              },
+              onSelected: (result) {
+                debugPrint('Selected: $result');
+                if (result == ActionMenuResult.goHome) {
+                  AppRouter.navigateToHome(context);
+                }
+              },
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: () => _refresh(),
+              child: Column(
+                children: [
+                  // Daily Medication Intake Card - UPDATED DESIGN
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8,
+                    ),
+                    padding: const EdgeInsets.all(8.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -520,261 +476,323 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                       ],
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _showBrowseSearchBox = false;
-                                      _showMedicationList = false;
-                                      _showCustomFilter = false;
-                                      _showCustomContent = false;
-                                    });
-                                  },
-                                  child: Container(
-                                    alignment: Alignment.center,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                    ),
-                                    // similar to button height
-                                    decoration: BoxDecoration(
-                                      color: _showBrowseSearchBox
-                                          ? Colors.grey.shade200
-                                          : AppTheme.primaryColor,
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    child: Text(
-                                      "Today's Medication",
-                                      style: TextStyle(
-                                        color: _showBrowseSearchBox
-                                            ? Colors.grey
-                                            : Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: deviceWidth(context) > 750 ? 20:12,
-                                      ),
-                                      softWrap: false,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 5),
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    if (_searchController.text.isEmpty) {
-                                      _onSearchFirstLoadUI();
-                                    }
-                                    setState(() {
-                                      _showBrowseSearchBox = true;
-                                      _showCustomFilter = true;
-                                    });
-                                  },
-                                  child: Container(
-                                    alignment: Alignment.center,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                    ),
-                                    // similar to button height
-                                    decoration: BoxDecoration(
-                                      color: _showBrowseSearchBox
-                                          ? AppTheme.primaryColor
-                                          : Colors.grey.shade200,
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    child: Text(
-                                      "Browse Medication",
-                                      style: TextStyle(
-                                        color: _showBrowseSearchBox
-                                            ? Colors.white
-                                            : Colors.grey,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: deviceWidth(context) > 750 ? 20:12,
-                                      ),
-                                      softWrap: false,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Daily Medication Intake',
+                              style: deviceWidth(context) > 750 ? AppTheme.title20:AppTheme.title16,
+                            ),
+                            Text(
+                              '${_intakeMedicationSummary?.data?.totalTaken ?? 0}/${_intakeMedicationSummary?.data?.totalScheduled ?? 0} Dose',
+                              style: deviceWidth(context) > 750 ? AppTheme.title20:AppTheme.title16,
+                            ),
+                          ],
                         ),
-                        if (_showBrowseSearchBox) ...[
-                          // Add this at the top of your widget tree where you want the radio buttons
-                          SizedBox(height: deviceWidth(context) > 750 ? 12:0),
-                          Row(
-                            mainAxisAlignment:deviceWidth(context) > 750 ? MainAxisAlignment.spaceEvenly: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                children: [
-                                  Radio<bool>(
-                                    value: true,
-                                    groupValue: _showMedicationList,
-                                    visualDensity: const VisualDensity(
-                                      horizontal: -4,
-                                      vertical: -4,
-                                    ),
-                                    // 👈 reduces spacing
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _searchFocusNode.unfocus();
-                                        _showMedicationList = true;
-                                        _searchController.clear();
-                                        // optional, depending on your UI
-                                      });
-                                    },
-                                  ),
-                                  Text(
-                                    "My Medication List",
-                                    style: deviceWidth(context) > 750 ? AppTheme.title20:AppTheme.title14,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(width: 16),
-                              Row(
-                                children: [
-                                  Radio<bool>(
-                                    value: false,
-                                    groupValue: _showMedicationList,
-                                    visualDensity: const VisualDensity(
-                                      horizontal: -4,
-                                      vertical: -4,
-                                    ),
-                                    // 👈 reduces spacing
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _searchFocusNode.unfocus();
-                                        _searchController.clear();
-                                        _showMedicationList = false;
-                                        _showBrowseSearchBox =
-                                            true; // optional, depending on your UI
-                                      });
-                                    },
-                                  ),
-                                  Text(
-                                    "Find Medications",
-                                    style: deviceWidth(context) > 750 ? AppTheme.title20:AppTheme.title14,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(height: deviceWidth(context) > 750 ? 12:8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-
+                        const SizedBox(height: 16),
+                        // Progress Bar Section
+                        _buildMedicationSummary(),
+                        // Tab buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildTabButton(0, 'All', 'lib/assets/Calendar.png'),
+                            _buildTabButton(1, 'Morning', 'lib/assets/Sun.png'),
+                            _buildTabButton(
+                              2,
+                              'Afternoon',
+                              'lib/assets/Dawn.png',
                             ),
-                            child: Container(
-                              height: deviceWidth(context) > 750 ? 60:45,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(40),
-                              ),
-                              child: TextField(
-                                controller: _searchController,
-                                focusNode: _searchFocusNode,
-                                contextMenuBuilder:
-                                    (context, editableTextState) {
-                                      return const SizedBox.shrink();
-                                    },
-                                decoration: InputDecoration(
-                                  hintText: 'Search medication',
-                                  hintStyle: TextStyle(
-                                    fontSize: deviceWidth(context) > 750 ? 20:16
-                                  ),
-                                  prefixIcon:  Icon(Icons.search,size: deviceWidth(context) > 750 ? 30:24,),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  suffixIcon: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (_showCustomFilter &&
-                                          !_showCustomContent)
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    AddMedicationPage(
-                                                      medPeriod:
-                                                          _selectedTabIndex,
-                                                      customMode: true,
-                                                    ),
-                                              ),
-                                            );
-                                            // AppRouter.navigateToAllMedication(context);
-                                          },
-                                          child: Container(
-                                            margin: const EdgeInsets.all(8),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.primaryColor,
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                'Custom +',
-                                                style: deviceWidth(context) > 750 ? AppTheme.title18
-                                                    .copyWith(
-                                                  color: Colors.white,
-                                                ):AppTheme.title12
-                                                    .copyWith(
-                                                      color: Colors.white,
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                            _buildTabButton(
+                              3,
+                              'Evening',
+                              'lib/assets/Vaporwave.png',
                             ),
-                          ),
-                        ],
-                        const SizedBox(height: 8),
-
-                        // Tab content
-                        Expanded(child: _buildTabContent()),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 16),
+
+                  // Medication List and Browse Medication buttons
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _showBrowseSearchBox = false;
+                                        _showMedicationList = false;
+                                        _showCustomFilter = false;
+                                        _showCustomContent = false;
+                                      });
+                                    },
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      // similar to button height
+                                      decoration: BoxDecoration(
+                                        color: _showBrowseSearchBox
+                                            ? Colors.grey.shade200
+                                            : AppTheme.primaryColor,
+                                        borderRadius: BorderRadius.circular(12.0),
+                                      ),
+                                      child: Text(
+                                        "Today's Medication",
+                                        style: TextStyle(
+                                          color: _showBrowseSearchBox
+                                              ? Colors.grey
+                                              : Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: deviceWidth(context) > 750 ? 20:12,
+                                        ),
+                                        softWrap: false,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 5),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (_searchController.text.isEmpty) {
+                                        _onSearchFirstLoadUI();
+                                      }
+                                      setState(() {
+                                        _showBrowseSearchBox = true;
+                                        _showCustomFilter = true;
+                                      });
+                                    },
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      // similar to button height
+                                      decoration: BoxDecoration(
+                                        color: _showBrowseSearchBox
+                                            ? AppTheme.primaryColor
+                                            : Colors.grey.shade200,
+                                        borderRadius: BorderRadius.circular(12.0),
+                                      ),
+                                      child: Text(
+                                        "Browse Medication",
+                                        style: TextStyle(
+                                          color: _showBrowseSearchBox
+                                              ? Colors.white
+                                              : Colors.grey,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: deviceWidth(context) > 750 ? 20:12,
+                                        ),
+                                        softWrap: false,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_showBrowseSearchBox) ...[
+                            // Add this at the top of your widget tree where you want the radio buttons
+                            SizedBox(height: deviceWidth(context) > 750 ? 12:0),
+                            Row(
+                              mainAxisAlignment:deviceWidth(context) > 750 ? MainAxisAlignment.spaceEvenly: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: [
+                                    Radio<bool>(
+                                      value: true,
+                                      groupValue: _showMedicationList,
+                                      visualDensity: const VisualDensity(
+                                        horizontal: -4,
+                                        vertical: -4,
+                                      ),
+                                      // 👈 reduces spacing
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _searchFocusNode.unfocus();
+                                          _showMedicationList = true;
+                                          _searchController.clear();
+                                          // optional, depending on your UI
+                                        });
+                                      },
+                                    ),
+                                    Text(
+                                      "My Medication List",
+                                      style: deviceWidth(context) > 750 ? AppTheme.title20:AppTheme.title14,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(width: 16),
+                                Row(
+                                  children: [
+                                    Radio<bool>(
+                                      value: false,
+                                      groupValue: _showMedicationList,
+                                      visualDensity: const VisualDensity(
+                                        horizontal: -4,
+                                        vertical: -4,
+                                      ),
+                                      // 👈 reduces spacing
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _searchFocusNode.unfocus();
+                                          _searchController.clear();
+                                          _showMedicationList = false;
+                                          _showBrowseSearchBox =
+                                          true; // optional, depending on your UI
+                                        });
+                                      },
+                                    ),
+                                    Text(
+                                      "Find Medications",
+                                      style: deviceWidth(context) > 750 ? AppTheme.title20:AppTheme.title14,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: deviceWidth(context) > 750 ? 12:8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+
+                              ),
+                              child: Container(
+                                height: deviceWidth(context) > 750 ? 60:45,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(40),
+                                ),
+                                child: TextField(
+                                  controller: _searchController,
+                                  focusNode: _searchFocusNode,
+                                  contextMenuBuilder:
+                                      (context, editableTextState) {
+                                    return const SizedBox.shrink();
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: 'Search medication',
+                                    hintStyle: TextStyle(
+                                        fontSize: deviceWidth(context) > 750 ? 20:16
+                                    ),
+                                    prefixIcon:  Icon(Icons.search,size: deviceWidth(context) > 750 ? 30:24,),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    suffixIcon: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (_showCustomFilter &&
+                                            !_showCustomContent)
+                                          GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      AddMedicationPage(
+                                                        medPeriod:
+                                                        _selectedTabIndex,
+                                                        customMode: true,
+                                                        ishome: widget.isHome ?? false,
+                                                      ),
+                                                ),
+                                              );
+                                              // AppRouter.navigateToAllMedication(context);
+                                            },
+                                            child: Container(
+                                              margin: const EdgeInsets.all(8),
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: AppTheme.primaryColor,
+                                                borderRadius:
+                                                BorderRadius.circular(14),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  'Custom +',
+                                                  style: deviceWidth(context) > 750 ? AppTheme.title18
+                                                      .copyWith(
+                                                    color: Colors.white,
+                                                  ):AppTheme.title12
+                                                      .copyWith(
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+
+                          // Tab content
+                          Expanded(child: _buildTabContent()),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          if (_isUpdatingIntake)
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                child: Container(
-                  color: Colors.black.withOpacity(0.1),
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: AppTheme.primaryColor,
+            if (_isUpdatingIntake)
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.1),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primaryColor,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -992,9 +1010,9 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
         if (_isViewFullMode)
           _intakeMedicationSummary != null
               ? MedicationDoseBanner(
-                  intakeSummary: _intakeMedicationSummary!,
-                  isMissedDose: true,
-                )
+            intakeSummary: _intakeMedicationSummary!,
+            isMissedDose: true,
+          )
               : const SizedBox(height: 0, width: 0),
 
         // Missed doses
@@ -1078,34 +1096,34 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
         Expanded(
           child: filteredSchedules.isEmpty
               ? const Center(
-                  child: Text(
-                    'No matching medications found.',
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                )
+            child: Text(
+              'No matching medications found.',
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
+          )
               : ListView.builder(
-                  itemCount: filteredSchedules.length,
-                  padding: const EdgeInsets.all(16),
-                  itemBuilder: (context, index) {
-                    final schedule = filteredSchedules[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _buildDetailedMedicationScheduleListCard(
-                        context,
-                        schedule,
-                      ),
-                    );
-                  },
+            itemCount: filteredSchedules.length,
+            padding: const EdgeInsets.all(16),
+            itemBuilder: (context, index) {
+              final schedule = filteredSchedules[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildDetailedMedicationScheduleListCard(
+                  context,
+                  schedule,
                 ),
+              );
+            },
+          ),
         ),
       ],
     );
   }
 
   Widget _buildDetailedMedicationScheduleListCard(
-    BuildContext context,
-    MedicationSchedule schedule,
-  ) {
+      BuildContext context,
+      MedicationSchedule schedule,
+      ) {
     toggleSelector = (schedule.isTaken ?? false) ? 0 : 1;
 
     void _showMealDeletedSuccess(BuildContext context, String mealName) {
@@ -1144,11 +1162,8 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        Navigator.pop(context);
-                        AppRouter.replaceWithAllMedication(
-                          context,
-                          pageType: NavPageType.addMedication.name,
-                        );
+                        _fetchIntakeStats();
+                        _fetchMyMedications();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
@@ -1270,6 +1285,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                               builder: (_) => AddMedicationPage(
                                 isEditMode: true,
                                 medicationData: model,
+                                ishome: widget.isHome ?? false,
                               ),
                             ),
                           );
@@ -1340,32 +1356,32 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                                                   onPressed: isDeleting
                                                       ? null
                                                       : () => Navigator.pop(
-                                                          dialogContext,
-                                                        ),
+                                                    dialogContext,
+                                                  ),
                                                   style: OutlinedButton.styleFrom(
                                                     side: const BorderSide(
                                                       color:
-                                                          AppTheme.primaryColor,
+                                                      AppTheme.primaryColor,
                                                     ),
                                                     padding:
-                                                        const EdgeInsets.symmetric(
-                                                          vertical: 12,
-                                                        ),
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                    ),
                                                     shape: RoundedRectangleBorder(
                                                       borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
+                                                      BorderRadius.circular(
+                                                        8,
+                                                      ),
                                                     ),
                                                   ),
                                                   child: Text(
                                                     'Cancel',
                                                     style: TextStyle(
                                                       color:
-                                                          AppTheme.primaryColor,
+                                                      AppTheme.primaryColor,
                                                       fontSize: deviceWidth(context) > 750 ? 20 :16,
                                                       fontWeight:
-                                                          FontWeight.w600,
+                                                      FontWeight.w600,
                                                     ),
                                                   ),
                                                 ),
@@ -1380,87 +1396,87 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                                                       onPressed: isDeleting
                                                           ? null
                                                           : () async {
-                                                              setDialogState(
+                                                        setDialogState(
+                                                              () =>
+                                                          isDeleting =
+                                                          true,
+                                                        );
+
+                                                        final success =
+                                                        await MedicationService.deleteMedicationSchedule(
+                                                          schedule
+                                                              .scheduleUuid
+                                                              .toString(),
+                                                        );
+
+                                                        if (success) {
+                                                          _skipNextPopRefresh = true;
+                                                          refreshMedicationHomeData(
+                                                            ref,
+                                                          );
+                                                          Navigator.pop(
+                                                            dialogContext,
+                                                          );
+                                                          _showMealDeletedSuccess(
+                                                            context,
+                                                            schedule
+                                                                .medicationName,
+                                                          );
+                                                        } else {
+                                                          setDialogState(
                                                                 () =>
-                                                                    isDeleting =
-                                                                        true,
-                                                              );
-
-                                                              final success =
-                                                                  await MedicationService.deleteMedicationSchedule(
-                                                                    schedule
-                                                                        .scheduleUuid
-                                                                        .toString(),
-                                                                  );
-
-                                                              if (success) {
-                                                                _skipNextPopRefresh = true;
-                                                                refreshMedicationHomeData(
-                                                                  ref,
-                                                                );
-                                                                Navigator.pop(
-                                                                  dialogContext,
-                                                                );
-                                                                _showMealDeletedSuccess(
-                                                                  context,
-                                                                  schedule
-                                                                      .medicationName,
-                                                                );
-                                                              } else {
-                                                                setDialogState(
-                                                                  () =>
-                                                                      isDeleting =
-                                                                          false,
-                                                                );
-                                                                ScaffoldMessenger.of(
-                                                                  context,
-                                                                ).showSnackBar(
-                                                                  const SnackBar(
-                                                                    content: Text(
-                                                                      'Failed to delete Medication.',
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                              }
-                                                            },
+                                                            isDeleting =
+                                                            false,
+                                                          );
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                'Failed to delete Medication.',
+                                                              ),
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
                                                       style: ElevatedButton.styleFrom(
                                                         backgroundColor:
-                                                            AppTheme
-                                                                .primaryColor,
+                                                        AppTheme
+                                                            .primaryColor,
                                                         foregroundColor:
-                                                            Colors.white,
+                                                        Colors.white,
                                                         padding:
-                                                            const EdgeInsets.symmetric(
-                                                              vertical: 12,
-                                                            ),
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 12,
+                                                        ),
                                                         shape: RoundedRectangleBorder(
                                                           borderRadius:
-                                                              BorderRadius.circular(
-                                                                8,
-                                                              ),
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
                                                         ),
                                                       ),
                                                       child: isDeleting
                                                           ? const SizedBox(
-                                                              height: 20,
-                                                              width: 20,
-                                                              child:
-                                                                  CircularProgressIndicator(
-                                                                    strokeWidth:
-                                                                        2,
-                                                                    color: Colors
-                                                                        .white,
-                                                                  ),
-                                                            )
+                                                        height: 20,
+                                                        width: 20,
+                                                        child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth:
+                                                          2,
+                                                          color: Colors
+                                                              .white,
+                                                        ),
+                                                      )
                                                           : Text(
-                                                              'Delete',
-                                                              style: TextStyle(
-                                                                fontSize: deviceWidth(context) > 750 ? 20 :16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                              ),
-                                                            ),
+                                                        'Delete',
+                                                        style: TextStyle(
+                                                          fontSize: deviceWidth(context) > 750 ? 20 :16,
+                                                          fontWeight:
+                                                          FontWeight
+                                                              .w600,
+                                                        ),
+                                                      ),
                                                     );
                                                   },
                                                 ),
@@ -1564,15 +1580,15 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
 
                               // 👉 API call
                               final tz =
-                                  await FlutterTimezone.getLocalTimezone();
+                              await FlutterTimezone.getLocalTimezone();
                               bool success =
-                                  await MedicationService.trackMedicationIntake(
-                                    scheduleUuid: schedule.scheduleUuid ?? '',
-                                    date: schedule.date,
-                                    timeSlot: schedule.timeSlot,
-                                    isTaken: true,
-                                    timezone: tz.identifier,
-                                  );
+                              await MedicationService.trackMedicationIntake(
+                                scheduleUuid: schedule.scheduleUuid ?? '',
+                                date: schedule.date,
+                                timeSlot: schedule.timeSlot,
+                                isTaken: true,
+                                timezone: tz.identifier,
+                              );
                               if (success) {
                                 _skipNextPopRefresh = true;
                                 refreshMedicationHomeData(ref);
@@ -1624,15 +1640,15 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
 
                               // 👉 API call
                               final tz =
-                                  await FlutterTimezone.getLocalTimezone();
+                              await FlutterTimezone.getLocalTimezone();
                               bool success =
-                                  await MedicationService.trackMedicationIntake(
-                                    scheduleUuid: schedule.scheduleUuid ?? '',
-                                    date: schedule.date,
-                                    timeSlot: schedule.timeSlot,
-                                    isTaken: false,
-                                    timezone: tz.identifier,
-                                  );
+                              await MedicationService.trackMedicationIntake(
+                                scheduleUuid: schedule.scheduleUuid ?? '',
+                                date: schedule.date,
+                                timeSlot: schedule.timeSlot,
+                                isTaken: false,
+                                timezone: tz.identifier,
+                              );
 
                               if (success) {
                                 _skipNextPopRefresh = true;
@@ -1815,7 +1831,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(label, style: TextStyle(fontSize: deviceWidth(context) > 750 ? 18 :12)),
-         SizedBox(width: deviceWidth(context) > 750 ? 8 :6),
+        SizedBox(width: deviceWidth(context) > 750 ? 8 :6),
         Container(
           padding: const EdgeInsets.all(2),
           // border thickness
@@ -1886,10 +1902,10 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
 
   Map<String, bool> expandedStates = {};
   Widget _buildDetailedMyMedicationCard(
-    BuildContext context,
-    MedicationModel med,
-    index,
-  ) {
+      BuildContext context,
+      MedicationModel med,
+      index,
+      ) {
     debugPrint("med. ${med.medicationBrand} ${med.startDate!}");
     final String key =
         med.scheduleUuid ?? med.medicationName ?? index.toString();
@@ -1954,28 +1970,28 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                                   SizedBox(width: 5),
                                   med.active!
                                       ? Container(
-                                          padding: EdgeInsets.only(
-                                            top: 2,
-                                            left: 5,
-                                            right: 5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green,
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              "Active",
-                                              style: TextStyle(
-                                                fontSize: deviceWidth(context) > 750 ? 18 :12,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        )
+                                    padding: EdgeInsets.only(
+                                      top: 2,
+                                      left: 5,
+                                      right: 5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      borderRadius: BorderRadius.circular(
+                                        20,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        "Active",
+                                        style: TextStyle(
+                                          fontSize: deviceWidth(context) > 750 ? 18 :12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  )
                                       : Container(),
                                 ],
                               ),
@@ -1994,6 +2010,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                                     builder: (_) => AddMedicationPage(
                                       myMedicationEditMode: true,
                                       medicationData: med,
+                                      ishome: widget.isHome ?? false,
                                     ),
                                   ),
                                 );
@@ -2028,7 +2045,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                                             decoration: BoxDecoration(
                                               color: Colors.white,
                                               borderRadius:
-                                                  BorderRadius.circular(16),
+                                              BorderRadius.circular(16),
                                             ),
                                             child: Column(
                                               mainAxisSize: MainAxisSize.min,
@@ -2044,7 +2061,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                                                   child: Icon(
                                                     Icons.delete,
                                                     color:
-                                                        AppTheme.primaryColor,
+                                                    AppTheme.primaryColor,
                                                     size:deviceWidth(context) > 750 ? 60 : 30,
                                                   ),
                                                 ),
@@ -2093,22 +2110,22 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                                                         onPressed: isDeleting
                                                             ? null
                                                             : () => Navigator.pop(
-                                                                dialogContext,
-                                                              ),
+                                                          dialogContext,
+                                                        ),
                                                         style: OutlinedButton.styleFrom(
                                                           side: const BorderSide(
                                                             color: AppTheme
                                                                 .primaryColor,
                                                           ),
                                                           padding:
-                                                              const EdgeInsets.symmetric(
-                                                                vertical: 12,
-                                                              ),
+                                                          const EdgeInsets.symmetric(
+                                                            vertical: 12,
+                                                          ),
                                                           shape: RoundedRectangleBorder(
                                                             borderRadius:
-                                                                BorderRadius.circular(
-                                                                  8,
-                                                                ),
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
                                                           ),
                                                         ),
                                                         child: Text(
@@ -2118,7 +2135,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                                                                 .primaryColor,
                                                             fontSize: deviceWidth(context) > 750 ? 20 :16,
                                                             fontWeight:
-                                                                FontWeight.w600,
+                                                            FontWeight.w600,
                                                           ),
                                                         ),
                                                       ),
@@ -2132,95 +2149,95 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                                                         onPressed: isDeleting
                                                             ? null
                                                             : () async {
-                                                                setDialogState(
-                                                                  () =>
-                                                                      isDeleting =
-                                                                          true,
-                                                                );
+                                                          setDialogState(
+                                                                () =>
+                                                            isDeleting =
+                                                            true,
+                                                          );
 
-                                                                final success =
-                                                                    await MedicationService.deleteMedicationMenuItem(
-                                                                      menuUuid:
-                                                                          med.scheduleUuid!,
-                                                                    );
+                                                          final success =
+                                                          await MedicationService.deleteMedicationMenuItem(
+                                                            menuUuid:
+                                                            med.scheduleUuid!,
+                                                          );
 
-                                                                if (success) {
-                                                                  _skipNextPopRefresh = true;
-                                                                  Navigator.pop(
-                                                                    dialogContext,
-                                                                  );
+                                                          if (success) {
+                                                            _skipNextPopRefresh = true;
+                                                            Navigator.pop(
+                                                              dialogContext,
+                                                            );
 
-                                                                  setState(() {
-                                                                    _myMedications.removeWhere(
-                                                                      (item) =>
-                                                                          item.scheduleUuid ==
-                                                                          med.scheduleUuid,
-                                                                    );
+                                                            setState(() {
+                                                              _myMedications.removeWhere(
+                                                                    (item) =>
+                                                                item.scheduleUuid ==
+                                                                    med.scheduleUuid,
+                                                              );
 
-                                                                    _filteredMedications.removeWhere(
-                                                                      (item) =>
-                                                                          item.scheduleUuid ==
-                                                                          med.scheduleUuid,
-                                                                    );
-                                                                  });
+                                                              _filteredMedications.removeWhere(
+                                                                    (item) =>
+                                                                item.scheduleUuid ==
+                                                                    med.scheduleUuid,
+                                                              );
+                                                            });
 
-                                                                  _showMealDeletedSuccess(
-                                                                    context,
-                                                                    med.medicationName!,
-                                                                  );
-                                                                } else {
-                                                                  setDialogState(
-                                                                    () => isDeleting =
-                                                                        false,
-                                                                  );
-                                                                  ScaffoldMessenger.of(
-                                                                    context,
-                                                                  ).showSnackBar(
-                                                                    const SnackBar(
-                                                                      content: Text(
-                                                                        'Failed to delete medication.',
-                                                                      ),
-                                                                    ),
-                                                                  );
-                                                                }
-                                                              },
+                                                            _showMealDeletedSuccess(
+                                                              context,
+                                                              med.medicationName!,
+                                                            );
+                                                          } else {
+                                                            setDialogState(
+                                                                  () => isDeleting =
+                                                              false,
+                                                            );
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              const SnackBar(
+                                                                content: Text(
+                                                                  'Failed to delete medication.',
+                                                                ),
+                                                              ),
+                                                            );
+                                                          }
+                                                        },
                                                         style: ElevatedButton.styleFrom(
                                                           backgroundColor:
-                                                              AppTheme
-                                                                  .primaryColor,
+                                                          AppTheme
+                                                              .primaryColor,
                                                           foregroundColor:
-                                                              Colors.white,
+                                                          Colors.white,
                                                           padding:
-                                                              const EdgeInsets.symmetric(
-                                                                vertical: 12,
-                                                              ),
+                                                          const EdgeInsets.symmetric(
+                                                            vertical: 12,
+                                                          ),
                                                           shape: RoundedRectangleBorder(
                                                             borderRadius:
-                                                                BorderRadius.circular(
-                                                                  8,
-                                                                ),
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
                                                           ),
                                                         ),
                                                         child: isDeleting
                                                             ? SizedBox(
-                                                                height: deviceWidth(context) > 750 ? 25 :20,
-                                                                width: deviceWidth(context) > 750 ? 25 :20,
-                                                                child: CircularProgressIndicator(
-                                                                  strokeWidth:
-                                                                      2,
-                                                                  color: Colors
-                                                                      .white,
-                                                                ),
-                                                              )
+                                                          height: deviceWidth(context) > 750 ? 25 :20,
+                                                          width: deviceWidth(context) > 750 ? 25 :20,
+                                                          child: CircularProgressIndicator(
+                                                            strokeWidth:
+                                                            2,
+                                                            color: Colors
+                                                                .white,
+                                                          ),
+                                                        )
                                                             : Text(
-                                                                'Delete',
-                                                                style: TextStyle(
-                                                                  fontSize: deviceWidth(context) > 750 ? 20 :16,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w600,
-                                                                ),
-                                                              ),
+                                                          'Delete',
+                                                          style: TextStyle(
+                                                            fontSize: deviceWidth(context) > 750 ? 20 :16,
+                                                            fontWeight:
+                                                            FontWeight
+                                                                .w600,
+                                                          ),
+                                                        ),
                                                       ),
                                                     ),
                                                   ],
@@ -2316,83 +2333,83 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                     // Status Section (dummy for now)
                     isExpanded
                         ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  SizedBox(width: 10),
-                                  if (med.morningTime != null)
-                                    _buildDetailChip(
-                                      formatTo12Hour(med.morningTime),
-                                      "lib/assets/Group 1361498938 (2).png",
-                                    ),
-
-                                  if (med.morningTime != null &&
-                                      (med.afternoonTime != null ||
-                                          med.eveningTime != null))
-                                    const SizedBox(width: 15),
-
-                                  if (med.afternoonTime != null)
-                                    _buildDetailChip(
-                                      formatTo12Hour(med.afternoonTime),
-                                      "lib/assets/Group 1361498935 (2).png",
-                                    ),
-
-                                  if (med.afternoonTime != null &&
-                                      med.eveningTime != null)
-                                    const SizedBox(width: 15),
-
-                                  if (med.eveningTime != null)
-                                    _buildDetailChip(
-                                      formatTo12Hour(med.eveningTime),
-                                      "lib/assets/Group 1361498936 (1).png",
-                                    ),
-                                ],
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SizedBox(width: 10),
+                            if (med.morningTime != null)
+                              _buildDetailChip(
+                                formatTo12Hour(med.morningTime),
+                                "lib/assets/Group 1361498938 (2).png",
                               ),
-                              SizedBox(height: 10),
 
-                              Row(
-                                children: [
-                                  SizedBox(width: 10),
-                                  Text(
-                                    "${med.dosageFrequency} - ${med.daysOfWeek!.join(", ")}",
-                                    style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :14),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 10),
+                            if (med.morningTime != null &&
+                                (med.afternoonTime != null ||
+                                    med.eveningTime != null))
+                              const SizedBox(width: 15),
 
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_month_sharp,
-                                        color: AppTheme.primaryColor,
-                                        size: deviceWidth(context) > 750 ? 35 :24,
-                                      ),
-                                      SizedBox(width: 2),
-                                      Text(DateFormatUtil.formatOfMonthDateYearDisplay(med.startDate!),style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :14),),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_month_sharp,
-                                        color: AppTheme.primaryColor,
-                                        size: deviceWidth(context) > 750 ? 35 :24,
-                                      ),
-                                      SizedBox(width: 2),
-                                      Text(DateFormatUtil.formatOfMonthDateYearDisplay(med.endDate!),style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :14),),
-                                    ],
-                                  ),
-                                ],
+                            if (med.afternoonTime != null)
+                              _buildDetailChip(
+                                formatTo12Hour(med.afternoonTime),
+                                "lib/assets/Group 1361498935 (2).png",
                               ),
-                            ],
-                          )
+
+                            if (med.afternoonTime != null &&
+                                med.eveningTime != null)
+                              const SizedBox(width: 15),
+
+                            if (med.eveningTime != null)
+                              _buildDetailChip(
+                                formatTo12Hour(med.eveningTime),
+                                "lib/assets/Group 1361498936 (1).png",
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+
+                        Row(
+                          children: [
+                            SizedBox(width: 10),
+                            Text(
+                              "${med.dosageFrequency} - ${med.daysOfWeek!.join(", ")}",
+                              style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :14),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+
+                        Row(
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_month_sharp,
+                                  color: AppTheme.primaryColor,
+                                  size: deviceWidth(context) > 750 ? 35 :24,
+                                ),
+                                SizedBox(width: 2),
+                                Text(DateFormatUtil.formatOfMonthDateYearDisplay(med.startDate!),style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :14),),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_month_sharp,
+                                  color: AppTheme.primaryColor,
+                                  size: deviceWidth(context) > 750 ? 35 :24,
+                                ),
+                                SizedBox(width: 2),
+                                Text(DateFormatUtil.formatOfMonthDateYearDisplay(med.endDate!),style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :14),),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
                         : Container(),
                   ],
                 ),
@@ -2421,6 +2438,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
             builder: (_) => AddMedicationPage(
               medicationData: medModel,
               medPeriod: _selectedTabIndex,
+              ishome: widget.isHome ?? false,
             ),
           ),
         );
@@ -2475,6 +2493,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                     builder: (_) => AddMedicationPage(
                       medicationData: medModel,
                       medPeriod: _selectedTabIndex,
+                      ishome: widget.isHome ?? false,
                     ),
                   ),
                 );
@@ -2536,28 +2555,28 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
         return _medications?.data?.allSchedules?.isNotEmpty ?? false
             ? _buildMyMedicationScheduleList()
             : _buildEmptyTab(
-                'Sunrise.png',
-                HeartThriveStrings.noMedicationMorningMSG,
-                Colors.orange,
-              );
+          'Sunrise.png',
+          HeartThriveStrings.noMedicationMorningMSG,
+          Colors.orange,
+        );
 
       case 2: // Afternoon
         return _medications?.data?.allSchedules?.isNotEmpty ?? false
             ? _buildMyMedicationScheduleList()
             : _buildEmptyTab(
-                'afternoon 1.png',
-                HeartThriveStrings.noMedicationAfterNoonMSG,
-                Colors.blue,
-              );
+          'afternoon 1.png',
+          HeartThriveStrings.noMedicationAfterNoonMSG,
+          Colors.blue,
+        );
 
       case 3: // Evening
         return _medications?.data?.allSchedules?.isNotEmpty ?? false
             ? _buildMyMedicationScheduleList()
             : _buildEmptyTab(
-                'Sunset.png',
-                HeartThriveStrings.noMedicationEveningMSG,
-                Colors.purple,
-              );
+          'Sunset.png',
+          HeartThriveStrings.noMedicationEveningMSG,
+          Colors.purple,
+        );
 
       default:
         return const SizedBox.shrink();
@@ -2697,7 +2716,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AddMedicationPage(),
+                      builder: (context) =>  AddMedicationPage(ishome: widget.isHome ?? false),
                     ),
                   );
                 },
@@ -2726,7 +2745,7 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
-                      const AddMedicationPage(customMode: true),
+                      AddMedicationPage(customMode: true, ishome: widget.isHome ?? false),
                 ),
               );
             },
@@ -2752,41 +2771,43 @@ class _AllMedicationPageState extends State<AllMedicationPage> with RouteAware {
 
   Widget _searchMedicationNotFound() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            HeartThriveStrings.noMedicationFoundMSG,
-            style: deviceWidth(context) > 750 ?AppTheme.title20.copyWith(fontWeight: FontWeight.normal) :AppTheme.title16.copyWith(fontWeight: FontWeight.normal),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      const AddMedicationPage(customMode: true),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              HeartThriveStrings.noMedicationFoundMSG,
+              style: deviceWidth(context) > 750 ?AppTheme.title20.copyWith(fontWeight: FontWeight.normal) :AppTheme.title16.copyWith(fontWeight: FontWeight.normal),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AddMedicationPage(customMode: true, ishome: widget.isHome ?? false,),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+              ),
+              child:  Text(
+                'Create Custom Item +',
+                style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :16, fontWeight: FontWeight.w600),
               ),
             ),
-            child:  Text(
-              'Create Custom Item +',
-              style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :16, fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Image.asset("lib/assets/no_search_med_found.png", height:deviceWidth(context) > 750 ? 180 : 160),
-        ],
+            const SizedBox(height: 10),
+            Image.asset("lib/assets/no_search_med_found.png", height:deviceWidth(context) > 750 ? 180 : 160),
+          ],
+        ),
       ),
     );
   }

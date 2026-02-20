@@ -18,12 +18,14 @@ class AddMealPage extends ConsumerStatefulWidget {
   final MealEditData? editData;
   final bool isEditMode;
   final bool mealMenuMode;
+  final bool isCustomMode;
 
   const AddMealPage({
     Key? key,
     this.editData,
     this.isEditMode = false,
     this.mealMenuMode = false,
+    this.isCustomMode = false,
   }) : super(key: key);
 
   @override
@@ -517,7 +519,7 @@ class _AddMealPageState extends ConsumerState<AddMealPage> {
         foodItemName: _foodItemController.text.trim(),
         brandName: 'Custom',
         foodCategoryId: 0,
-        foodTypeId: 0,
+        foodTypeId: widget.editData!.id,
         sodiumAmount: sodium,
         caloriesAmount: calories,
         carbsAmount: carbs,
@@ -749,7 +751,7 @@ class _AddMealPageState extends ConsumerState<AddMealPage> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: _foodItemController,
-                    enabled: !widget.isEditMode,
+                    enabled: widget.isCustomMode,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
                         RegExp(r"[a-zA-Z0-9 .,'’\-–&]"),

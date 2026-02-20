@@ -580,265 +580,260 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   Widget build(BuildContext context) {
     final userDetailsAsync = ref.watch(userDetailsDataProvider);
     final user = userDetailsAsync.asData?.value;
-    return WillPopScope(
-      onWillPop: () async{
-        return true;
-      },
-      child: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Scaffold(
-          resizeToAvoidBottomInset: true,
-          backgroundColor: AppTheme.appBackgroundColor,
-          appBar: AppBar(
-            backgroundColor: AppTheme.primaryColor,
-            elevation: 0,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(24), // 👈 Adjust the roundness
-              ),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        backgroundColor: AppTheme.appBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: AppTheme.primaryColor,
+          elevation: 0,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(24), // 👈 Adjust the roundness
             ),
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 15,top: 8,bottom: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6), // round shape
-                child: user?.profileImage == null
-                    ? Image.asset(
-                  'lib/assets/default_profile_img.png',
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
-                  width: 40,
-                  height: 40,
-                )
-                    : Image.memory(
-                  base64Decode(user!.profileImage!),
-                  gaplessPlayback: true,
-                  fit: BoxFit.cover,
-                  width: 40,
-                  height: 40,
-                  errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.account_circle, color: Colors.white),
-                ),
-              ),
-            ),
-            title: const Center(
-              child:  Text(
-                'Edit Profile',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            actions: [
-              Padding(
-                padding: EdgeInsets.only(right: 16.0),
-                child: NotificationBadgeIcon(),
-              ),
-            ],
           ),
-          body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Padding(
-            padding: const EdgeInsets.all(16),
-            child: SingleChildScrollView(
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 4,
-                shadowColor: Colors.black26,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          // AppRouter.replaceWithHome(context);
-                          Navigator.pop(context);
-                        },
-                        child: Image.asset("lib/assets/back_button.png", height: deviceWidth(context) > 750 ? 35 :25, width: deviceWidth(context) > 750 ? 35 :25,),
-                      ),
-                      SizedBox(height: 10),
-                      Text("Personal Info",
-                          style: TextStyle(
-                              fontSize: deviceWidth(context) > 750 ? 30 : 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black)),
-                      const SizedBox(height: 16),
-                      _buildEditOption("Full name", fullName, (val) {
-                        setState(() => fullName = val);
-                      }),
-                      _buildEditOption("Gender", gender, (val) {
-                        setState(() => gender = val);
-                      }),
-                      _buildEditOption("Date of birth", dob, (val) {
-                        setState(() => dob = val);
-                      }),
-                      _buildEditOption("Email", email, (val) {
-                        setState(() => email = val);
-                      }),
-                      const SizedBox(height: 10),
-                      Form(
-                        key: _formKey,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        child: IntlPhoneField(
-                          autofocus: false,
-                          controller: _phoneController,
-                          focusNode: _phoneFocus,
-                          initialCountryCode: _initialCountryCode,
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.done,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          // ✅ SELECTED COUNTRY (FLAG + CODE) FONT SIZE
-                          dropdownTextStyle: TextStyle(
-                            fontSize: deviceWidth(context) > 750 ? 22 : 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 15,top: 8,bottom: 8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6), // round shape
+              child: user?.profileImage == null
+                  ? Image.asset(
+                'lib/assets/default_profile_img.png',
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                width: 40,
+                height: 40,
+              )
+                  : Image.memory(
+                base64Decode(user!.profileImage!),
+                gaplessPlayback: true,
+                fit: BoxFit.cover,
+                width: 40,
+                height: 40,
+                errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.account_circle, color: Colors.white),
+              ),
+            ),
+          ),
+          title: const Center(
+            child:  Text(
+              'Edit Profile',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: 16.0),
+              child: NotificationBadgeIcon(),
+            ),
+          ],
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 4,
+              shadowColor: Colors.black26,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        // AppRouter.replaceWithHome(context);
+                        Navigator.pop(context);
+                      },
+                      child: Image.asset("lib/assets/back_button.png", height: deviceWidth(context) > 750 ? 35 :25, width: deviceWidth(context) > 750 ? 35 :25,),
+                    ),
+                    SizedBox(height: 10),
+                    Text("Personal Info",
+                        style: TextStyle(
+                            fontSize: deviceWidth(context) > 750 ? 30 : 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black)),
+                    const SizedBox(height: 16),
+                    _buildEditOption("Full name", fullName, (val) {
+                      setState(() => fullName = val);
+                    }),
+                    _buildEditOption("Gender", gender, (val) {
+                      setState(() => gender = val);
+                    }),
+                    _buildEditOption("Date of birth", dob, (val) {
+                      setState(() => dob = val);
+                    }),
+                    _buildEditOption("Email", email, (val) {
+                      setState(() => email = val);
+                    }),
+                    const SizedBox(height: 10),
+                    Form(
+                      key: _formKey,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      child: IntlPhoneField(
+                        autofocus: false,
+                        controller: _phoneController,
+                        focusNode: _phoneFocus,
+                        initialCountryCode: _initialCountryCode,
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.done,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        // ✅ SELECTED COUNTRY (FLAG + CODE) FONT SIZE
+                        dropdownTextStyle: TextStyle(
+                          fontSize: deviceWidth(context) > 750 ? 22 : 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
 
-                          // ✅ DROPDOWN ICON SIZE
-                          dropdownIcon: Icon(
-                            Icons.arrow_drop_down,
-                            size: deviceWidth(context) > 750 ? 34 : 26,
-                          ),
-                          dropdownIconPosition: IconPosition.trailing,
+                        // ✅ DROPDOWN ICON SIZE
+                        dropdownIcon: Icon(
+                          Icons.arrow_drop_down,
+                          size: deviceWidth(context) > 750 ? 34 : 26,
+                        ),
+                        dropdownIconPosition: IconPosition.trailing,
 
-                          // ✅ COUNTRY PICKER LIST FONT SIZE (THIS FIXES YOUR ISSUE)
-                          pickerDialogStyle: PickerDialogStyle(
-                            searchFieldInputDecoration: InputDecoration(
-                              hintText: 'Search country',
-                              hintStyle: TextStyle(
-                                fontSize: deviceWidth(context) > 750 ? 20 : 14,
-                              ),
-                              suffixIcon: Icon(
-                                Icons.search, // 🔍 SEARCH ICON
-                                size: deviceWidth(context) > 750 ? 28 : 22,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            countryNameStyle: TextStyle(
+                        // ✅ COUNTRY PICKER LIST FONT SIZE (THIS FIXES YOUR ISSUE)
+                        pickerDialogStyle: PickerDialogStyle(
+                          searchFieldInputDecoration: InputDecoration(
+                            hintText: 'Search country',
+                            hintStyle: TextStyle(
                               fontSize: deviceWidth(context) > 750 ? 20 : 14,
                             ),
-                            countryCodeStyle: TextStyle(
-                              fontSize: deviceWidth(context) > 750 ? 18 : 13,
+                            suffixIcon: Icon(
+                              Icons.search, // 🔍 SEARCH ICON
+                              size: deviceWidth(context) > 750 ? 28 : 22,
                               color: Colors.grey,
                             ),
                           ),
-                          decoration: InputDecoration(
-                            hintText: "Enter your phone number",
-                            hintStyle: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 : 15, color: Colors.grey),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            isDense: true,
-                            //suffixIcon: Icon(Icons.phone, color: Colors.grey),
+                          countryNameStyle: TextStyle(
+                            fontSize: deviceWidth(context) > 750 ? 20 : 14,
                           ),
-                          // dropdownIcon: const Icon(Icons.arrow_drop_down),
-                          // dropdownIconPosition: IconPosition.trailing,
-                          validator: (phoneNumber) {
-                            debugPrint('${phoneNumber!.isValidNumber()}');
-                            if (phoneNumber == null || phoneNumber.number.isEmpty) {
-                              return 'Phone number is required';
-                            }
-                            if (_selectedCountryCode == null || _selectedCountryCode!.isEmpty) {
-                              return 'Please select a country code';
-                            }
-                            if (!phoneNumber!.isValidNumber()) {
-                              return 'Please enter correct number';
-                            }
+                          countryCodeStyle: TextStyle(
+                            fontSize: deviceWidth(context) > 750 ? 18 : 13,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        decoration: InputDecoration(
+                          hintText: "Enter your phone number",
+                          hintStyle: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 : 15, color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          isDense: true,
+                          //suffixIcon: Icon(Icons.phone, color: Colors.grey),
+                        ),
+                        // dropdownIcon: const Icon(Icons.arrow_drop_down),
+                        // dropdownIconPosition: IconPosition.trailing,
+                        validator: (phoneNumber) {
+                          debugPrint('${phoneNumber!.isValidNumber()}');
+                          if (phoneNumber == null || phoneNumber.number.isEmpty) {
+                            return 'Phone number is required';
+                          }
+                          if (_selectedCountryCode == null || _selectedCountryCode!.isEmpty) {
+                            return 'Please select a country code';
+                          }
+                          if (!phoneNumber!.isValidNumber()) {
+                            return 'Please enter correct number';
+                          }
 
-                            return null;
-                          },
-                          onChanged: (phoneNumber) {
-                            debugPrint("${phoneNumber!.isValidNumber()}");
-                            setState(() {
-                              phone = phoneNumber.number;
-                              _selectedCountryCode = phoneNumber.countryCode;
-                              _selectedCompletePhoneNumber = phoneNumber.completeNumber;
-                              selectedPhoneNumber = phoneNumber;
-                            });
-                          },
-                          onCountryChanged: (country) {
-                            debugPrint("country 663 @@ code ${country.code} rc ${country.regionCode}"
-                                "name ${country.name}");
-                            setState(() {
-                              _selectedCountryCode = "+${country.dialCode}";
-                              _initialCountryCode = country.code;
-                              _selectedCompletePhoneNumber =
-                                  _selectedCountryCode! + _phoneController.text;
-                            });
-                          },
-                          onSaved: (details) {
-                            debugPrint("On Saved ${details?.completeNumber}");
-                          },
-                          onSubmitted: (_) => _phoneFocus.unfocus(),
+                          return null;
+                        },
+                        onChanged: (phoneNumber) {
+                          debugPrint("${phoneNumber!.isValidNumber()}");
+                          setState(() {
+                            phone = phoneNumber.number;
+                            _selectedCountryCode = phoneNumber.countryCode;
+                            _selectedCompletePhoneNumber = phoneNumber.completeNumber;
+                            selectedPhoneNumber = phoneNumber;
+                          });
+                        },
+                        onCountryChanged: (country) {
+                          debugPrint("country 663 @@ code ${country.code} rc ${country.regionCode}"
+                              "name ${country.name}");
+                          setState(() {
+                            _selectedCountryCode = "+${country.dialCode}";
+                            _initialCountryCode = country.code;
+                            _selectedCompletePhoneNumber =
+                                _selectedCountryCode! + _phoneController.text;
+                          });
+                        },
+                        onSaved: (details) {
+                          debugPrint("On Saved ${details?.completeNumber}");
+                        },
+                        onSubmitted: (_) => _phoneFocus.unfocus(),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                          // debugPrint("Edited valid phone ${selectedPhoneNumber!.isValidNumber()} isModified ${isModified}");
+                          if ((selectedPhoneNumber == null || !selectedPhoneNumber!.isValidNumber()) &&
+                              (isModified == null || !isModified!)) {
+                            return;
+                          }
+
+                          // 🔑 Run form validation before saving
+                          if (_formKey.currentState!.validate()) {
+                            _formKey.currentState!.save();
+                            _saveProfile();
+                          } else {
+                            // Optional: show a red snackbar if you want extra feedback
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please fix the errors before saving')),
+                            );
+                          }
+                        },
+                        style: ((selectedPhoneNumber?.isValidNumber() ?? false) || (isModified ?? false)) ?
+                        ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ):
+                        ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                            : const Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () {
-                            // debugPrint("Edited valid phone ${selectedPhoneNumber!.isValidNumber()} isModified ${isModified}");
-                            if ((selectedPhoneNumber == null || !selectedPhoneNumber!.isValidNumber()) &&
-                                (isModified == null || !isModified!)) {
-                              return;
-                            }
+                    )
 
-                            // 🔑 Run form validation before saving
-                            if (_formKey.currentState!.validate()) {
-                              _formKey.currentState!.save();
-                              _saveProfile();
-                            } else {
-                              // Optional: show a red snackbar if you want extra feedback
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please fix the errors before saving')),
-                              );
-                            }
-                          },
-                          style: ((selectedPhoneNumber?.isValidNumber() ?? false) || (isModified ?? false)) ?
-                          ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ):
-                          ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                              : const Text(
-                            'Save Changes',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      )
-
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),

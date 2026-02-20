@@ -1659,7 +1659,7 @@ Small daily habits lead to big long-term improvements.''',
                       const Color(0xFFFF6B6B), // Light Red/Pink
                           () {
                         Navigator.pop(context);
-                        AppRouter.navigateToAddSymptoms(context);
+                        AppRouter.navigateToAddSymptoms(context, true);
                       },
                     ),
                     const SizedBox(width: 60),

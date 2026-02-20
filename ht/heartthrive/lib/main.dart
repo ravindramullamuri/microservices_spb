@@ -13,6 +13,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,6 +65,7 @@ class MyHttpOverrides extends HttpOverrides {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+
   // Fast parallel startup (non-blocking UI)
   await Future.wait([
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
@@ -79,6 +81,7 @@ Future<void> main() async {
 
   // Bootstrap everything & resolve initial token
   final initialToken = await _bootstrap(container);
+  debugPaintBaselinesEnabled = false;
 
   runApp(
     UncontrolledProviderScope(

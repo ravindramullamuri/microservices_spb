@@ -601,7 +601,7 @@ class _HeartRiskDashboardPageState extends ConsumerState<HeartRiskDashboardPage>
                     wakingUpAtNightShortOfBreath: wakingUpAtNightShortOfBreath
 
                 );
-                AppRouter.navigateToAddSymptomsWithEdit(context, symptomModel, true);
+                AppRouter.navigateToAddSymptomsWithEdit(context, symptomModel, true, false);
               }, icon: Icon(Icons.edit_sharp,color: AppTheme.primaryColor,)):SizedBox()
             ],
           ),

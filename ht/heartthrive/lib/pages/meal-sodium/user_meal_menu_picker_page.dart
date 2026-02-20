@@ -225,7 +225,7 @@ class MealCard extends StatelessWidget {
                 final result =
                 await AppRouter.navigateToAddMeal(context,
                   editData: MealEditData(
-                    id: meal.id,
+                    id: meal.food.id,
                     name: meal.food.description,
                     quantity: meal.food.servingSize.toString(),
                     servingUnit: meal.food.servingUnit,

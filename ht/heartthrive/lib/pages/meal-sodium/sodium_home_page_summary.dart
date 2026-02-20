@@ -29,7 +29,7 @@ class _SodiumHomePageSummaryState extends ConsumerState<SodiumHomePageSummary> {
   // -------------------------------------------------------------
   double _getMealSodium(NutrientSummaryResponse response, String mealName) {
     final meal = response.summaries.firstWhere(
-      (e) => e.mealType.name.toLowerCase() == mealName.toLowerCase(),
+          (e) => e.mealType.name.toLowerCase() == mealName.toLowerCase(),
       orElse: () => MealTypeNutrientSummary(
         mealType: MealType(
           id: 0,
@@ -43,7 +43,7 @@ class _SodiumHomePageSummaryState extends ConsumerState<SodiumHomePageSummary> {
     );
 
     final sodium = meal.nutrients.firstWhere(
-      (n) => n.name.toLowerCase() == 'sodium',
+          (n) => n.name.toLowerCase() == 'sodium',
       orElse: () => Nutrients(
         name: 'Sodium',
         amount: 0,
@@ -57,11 +57,11 @@ class _SodiumHomePageSummaryState extends ConsumerState<SodiumHomePageSummary> {
   }
 
   Widget _mealTab(
-    NutrientSummaryResponse response,
-    String meal,
-    int target,
-    Color color,
-  ) {
+      NutrientSummaryResponse response,
+      String meal,
+      int target,
+      Color color,
+      ) {
     return MealProgressTab(
       title: meal,
       consumed: _getMealSodium(response, meal),
@@ -72,6 +72,11 @@ class _SodiumHomePageSummaryState extends ConsumerState<SodiumHomePageSummary> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(todayNutrientProvider, (previous, next) {
+      if (next.hasValue) {
+        ref.invalidate(nutrientSummaryByMealTypeProvider);
+      }
+    });
     final nutrientAsync = ref.watch(todayNutrientProvider);
     final mealSummaryAsync = ref.watch(nutrientSummaryByMealTypeProvider);
     final showMoreInfo = ref.watch(showMoreInfoProvider);
@@ -95,7 +100,7 @@ class _SodiumHomePageSummaryState extends ConsumerState<SodiumHomePageSummary> {
           // ================= HEADER + SUMMARY GROUP =================
           buildWrapperInkWell(
             context,
-            () {
+                () {
               final route = MaterialPageRoute(
                 builder: (BuildContext context) {
                   return MealLogsPage();
@@ -249,14 +254,14 @@ class SodiumNutrientSummary extends StatelessWidget {
     return nutrients
         .firstWhere(
           (e) => e.name.toLowerCase() == name.toLowerCase(),
-          orElse: () => Nutrients(
-            name: name,
-            amount: 0,
-            minValue: 0,
-            maxValue: 0,
-            unitName: 'mg',
-          ),
-        )
+      orElse: () => Nutrients(
+        name: name,
+        amount: 0,
+        minValue: 0,
+        maxValue: 0,
+        unitName: 'mg',
+      ),
+    )
         .amount;
   }
 

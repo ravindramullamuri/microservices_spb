@@ -9,6 +9,7 @@ import 'package:heart_thrive/components/action_menu.dart';
 import 'package:heart_thrive/components/time_12h_formatter.dart';
 import 'package:heart_thrive/constants/ui_constants.dart';
 import 'package:heart_thrive/core/api_endpoints.dart';
+import 'package:heart_thrive/pages/home_page.dart';
 import 'package:heart_thrive/routes/app_router.dart';
 import 'package:heart_thrive/services/home/risk_meter_service.dart';
 import 'package:heart_thrive/services/medication_services.dart';
@@ -29,6 +30,7 @@ class AddMedicationPage extends StatefulWidget {
   final MedicationModel? medicationData;
   final bool customMode;
   final int medPeriod;
+  final bool ishome;
 
   const AddMedicationPage({
     Key? key,
@@ -37,6 +39,7 @@ class AddMedicationPage extends StatefulWidget {
     this.medicationData,
     this.myMedicationEditMode = false,
     this.customMode = false,
+    this.ishome = false,
   }) : super(key: key);
 
   @override
@@ -46,9 +49,9 @@ class AddMedicationPage extends StatefulWidget {
 class _AddMedicationPageState extends State<AddMedicationPage> {
   // Form controllers
   final TextEditingController _medicationNameController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _medicationBrandController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _doseController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _startDateController = TextEditingController();
@@ -107,12 +110,12 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
       final today = DateTime.now();
       if (_startDateController.text.isEmpty) {
         _startDateController.text =
-            "${today.month.toString().padLeft(2, '0')}/${today.day.toString().padLeft(2, '0')}/${today.year}";
+        "${today.month.toString().padLeft(2, '0')}/${today.day.toString().padLeft(2, '0')}/${today.year}";
       }
       final after30 = today.add(const Duration(days: 30));
       if (_endDateController.text.isEmpty) {
         _endDateController.text =
-            "${today.month.toString().padLeft(2, '0')}/${today.day.toString().padLeft(2, '0')}/${today.year}";
+        "${today.month.toString().padLeft(2, '0')}/${today.day.toString().padLeft(2, '0')}/${today.year}";
       }
       //if (_selectedFrequency.isEmpty) _selectedFrequency = 'Daily';
       //if (_selectedIntake.isEmpty) _selectedIntake = 'Before meal';
@@ -152,7 +155,7 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
             .toList();
         selectedDays = List.generate(
           7,
-          (i) => daysFromData.contains(dayNames[i].toLowerCase()),
+              (i) => daysFromData.contains(dayNames[i].toLowerCase()),
         );
       }
 
@@ -243,8 +246,17 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
   }
 
   bool get _areDatesValid {
-    return isValidMMDDYYYY(_startDateController.text) &&
-        isValidMMDDYYYY(_endDateController.text);
+    // Start Date must always be valid
+    if (!isValidMMDDYYYY(_startDateController.text)) {
+      return false;
+    }
+
+    // End Date is OPTIONAL
+    if (_endDateController.text.trim().isEmpty) {
+      return true;
+    }
+
+    return isValidMMDDYYYY(_endDateController.text);
   }
 
 
@@ -321,10 +333,11 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
   }
 
   Future<void> _saveMedication(
-    ref, {
-    bool updateInMenu = false,
-    String? menuUuid,
-  }) async {
+      ref, {
+        bool updateInMenu = false,
+        String? menuUuid,
+      }) async
+  {
     // Form validation
     if (!_formKey.currentState!.validate()) return;
     // Weekly once/twice/thrice validation
@@ -385,14 +398,22 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
       debugPrint("Start Date  377 @@ ${_startDateController.text}");
       final parsedDate = DateFormat('MM/dd/yyyy').parse(_startDateController.text.trim());
       final startDate = DateFormat('MM-dd-yyyy').format(parsedDate);
-      final parsedEndDate = DateFormat('MM/dd/yyyy').parse(_endDateController.text.trim());
-      final endDate = DateFormat('MM-dd-yyyy').format(parsedEndDate);
+      String? endDate;
+      if (_endDateController.text.trim().isNotEmpty) {
+        final parsedEndDate = DateFormat('MM/dd/yyyy')
+            .parse(_endDateController.text.trim());
+        endDate = DateFormat('MM-dd-yyyy').format(parsedEndDate);
+      }
+      String? medUUID = widget.medicationData?.medicationUuid ?? widget.medicationData?.scheduleUuid;
+      debugPrint("medUUID @@@ $medUUID  "
+          "\n mID ${widget.medicationData?.medicationUuid} "
+          "\n sId ${widget.medicationData?.scheduleUuid}");
       final body = {
-        "medicationUuid": widget.medicationData?.medicationUuid ?? '',
+        "medicationUuid": medUUID,
         "medicationName": _medicationNameController.text.trim(),
         "medicationBrand": _medicationBrandController.text.trim(),
         "startDate": startDate,
-        "endDate": endDate,
+        if(endDate != null) "endDate": endDate,
         "morning": _morningSelected,
         "afternoon": _afternoonSelected,
         "evening": _eveningSelected,
@@ -416,13 +437,13 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
       debugPrint("321 @@@ ${jsonEncode(body)}");
       final addResponse = await http
           .post(
-            addUrl,
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": "Bearer $token",
-            },
-            body: jsonEncode(body),
-          )
+        addUrl,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(body),
+      )
           .timeout(timeoutDuration);
 
       if (addResponse.statusCode == 200 || addResponse.statusCode == 201) {
@@ -446,13 +467,13 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
 
           final updateResponse = await http
               .put(
-                updateUrl,
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": "Bearer $token",
-                },
-                body: jsonEncode(updateBody),
-              )
+            updateUrl,
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer $token",
+            },
+            body: jsonEncode(updateBody),
+          )
               .timeout(timeoutDuration);
 
           if (updateResponse.statusCode == 200) {
@@ -464,7 +485,7 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
       } else {
         final message = (addResponse.body.isNotEmpty)
             ? (json.decode(addResponse.body)['message'] ??
-                  'Something went wrong')
+            'Something went wrong')
             : 'Something went wrong';
         _showErrorDialog(
           'Failed to save medication. Please try again with a different one.',
@@ -590,16 +611,16 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
     if (picked != null) {
       setState(() {
         controller.text =
-            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
 
   Widget _buildDateField(
-    String label,
-    TextEditingController controller, {
-    String? Function(String?)? validator,
-  }) {
+      String label,
+      TextEditingController controller, {
+        String? Function(String?)? validator,
+      }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -625,10 +646,10 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
   }
 
   Widget _buildPeriodCheckbox(
-    String label,
-    bool value,
-    Function(bool?) onChanged,
-  ) {
+      String label,
+      bool value,
+      Function(bool?) onChanged,
+      ) {
     return Row(
       children: [
         Checkbox(
@@ -645,10 +666,10 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
   }
 
   Future<Duration?> _selectTime(
-    BuildContext context,
-    String period, {
-    Duration? initial,
-  }) async {
+      BuildContext context,
+      String period, {
+        Duration? initial,
+      }) async {
     // Convert initial Duration → 12H time + AM/PM
     int totalMinutes = (initial ?? const Duration(hours: 9)).inMinutes;
     int hour24 = totalMinutes ~/ 60;
@@ -696,7 +717,7 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
                           },
                           children: List.generate(
                             12,
-                            (i) => Center(
+                                (i) => Center(
                               child: Text(
                                 "${i + 1}",
                                 style:  TextStyle(fontSize:deviceWidth(context) > 750 ? 24 : 18),
@@ -721,7 +742,7 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
                           },
                           children: List.generate(
                             60,
-                            (i) => Center(
+                                (i) => Center(
                               child: Text(
                                 i.toString().padLeft(2, '0'),
                                 style: TextStyle(fontSize: deviceWidth(context) > 750 ? 24 :18),
@@ -867,8 +888,8 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
       // Skip if this period is not selected
       bool isSelected =
           (period == 'Morning' && _morningSelected) ||
-          (period == 'Afternoon' && _afternoonSelected) ||
-          (period == 'Evening' && _eveningSelected);
+              (period == 'Afternoon' && _afternoonSelected) ||
+              (period == 'Evening' && _eveningSelected);
 
       if (!isSelected) continue;
 
@@ -1146,15 +1167,15 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
 
     switch (period) {
       case 'Morning':
-        // 6:00 AM — 11:59 AM
+      // 6:00 AM — 11:59 AM
         return totalMinutes >= 6 * 60 && totalMinutes < 12 * 60;
 
       case 'Afternoon':
-        // 12:00 PM — 4:59 PM
+      // 12:00 PM — 4:59 PM
         return totalMinutes >= 12 * 60 && totalMinutes < 17 * 60;
 
       case 'Evening':
-        // 5:00 PM — 11:30 PM
+      // 5:00 PM — 11:30 PM
         return totalMinutes >= 17 * 60 && totalMinutes <= 22 * 60;
 
       default:
@@ -1189,9 +1210,9 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
               Text(
                 'Preview',
                 style: TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: deviceWidth(context) > 750 ? 20 :14
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: deviceWidth(context) > 750 ? 20 :14
                 ),
               ),
             ],
@@ -1207,9 +1228,9 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
               Text(
                 'Reset',
                 style: TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize:deviceWidth(context) > 750 ? 20 :14
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize:deviceWidth(context) > 750 ? 20 :14
                 ),
               ),
             ],
@@ -1252,7 +1273,7 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
             ),
             const SizedBox(height: 4),
             if (slots.isEmpty)
-               Text(
+              Text(
                 'No times selected yet',
                 style: TextStyle(color: Colors.grey, fontSize:deviceWidth(context) > 750 ? 16: 12),
               ),
@@ -1480,7 +1501,7 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
           },
           builder: (state) {
             final bool showError =
-                (state.hasError &&
+            (state.hasError &&
                 (_selectedFrequency.isEmpty ||
                     _selectedFrequency == 'Select Medication Intake'));
             return Column(
@@ -1559,8 +1580,8 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
                                       color: isPlaceholder
                                           ? Colors.grey
                                           : (isSelected
-                                                ? Colors.white
-                                                : Colors.black),
+                                          ? Colors.white
+                                          : Colors.black),
                                       fontWeight: isPlaceholder
                                           ? FontWeight.w400
                                           : FontWeight.w500,
@@ -1698,38 +1719,38 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
         const SizedBox(height: 8),
         _selectedFrequency == 'Custom' || _selectedFrequency == 'Daily'
             ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    value: isAllSelected,
-                    activeColor: AppTheme.primaryColor,
-                    onChanged: (value) {
-                      if (_selectedFrequency == "Custom" ||
-                          _selectedFrequency == "Daily") {
-                        int selectedCount = selectedDays.where((e) => e).length;
-                        if (_selectedFrequency != "Daily" &&
-                            selectedCount > _maxDaysAllowed) {
-                          _showErrorDialog(
-                            "You can select only $_maxDaysAllowed day(s) for $_selectedFrequency",
-                          );
-                          return;
-                        }
-                        setState(() {
-                          for (int i = 0; i < selectedDays.length; i++) {
-                            selectedDays[i] = value ?? false;
-                          }
-                        });
-                      } else {
-                        return;
-                      }
-                    },
-                  ),
-                  Text(
-                    'Select All',
-                    style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :16, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              )
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Checkbox(
+              value: isAllSelected,
+              activeColor: AppTheme.primaryColor,
+              onChanged: (value) {
+                if (_selectedFrequency == "Custom" ||
+                    _selectedFrequency == "Daily") {
+                  int selectedCount = selectedDays.where((e) => e).length;
+                  if (_selectedFrequency != "Daily" &&
+                      selectedCount > _maxDaysAllowed) {
+                    _showErrorDialog(
+                      "You can select only $_maxDaysAllowed day(s) for $_selectedFrequency",
+                    );
+                    return;
+                  }
+                  setState(() {
+                    for (int i = 0; i < selectedDays.length; i++) {
+                      selectedDays[i] = value ?? false;
+                    }
+                  });
+                } else {
+                  return;
+                }
+              },
+            ),
+            Text(
+              'Select All',
+              style: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 :16, fontWeight: FontWeight.w600),
+            ),
+          ],
+        )
             : SizedBox(),
       ],
     );
@@ -1775,9 +1796,9 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
             child: Text(
               'Clear All',
               style: TextStyle(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w600,
-                fontSize: deviceWidth(context) > 750 ? 20 :14
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: deviceWidth(context) > 750 ? 20 :14
               ),
             ),
           ),
@@ -1788,9 +1809,9 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
             builder: (context, ref, _) {
               return ElevatedButton(
                 onPressed: () async {
-                   if(!_areDatesValid){
-                     return;
-                   }
+                  if(!_areDatesValid){
+                    return;
+                  }
                   if (_formKey.currentState!.validate() &&
                       _validateSelectedTimes(context)) {
                     if (!_validateWeeklyDaySelection()) return;
@@ -1813,9 +1834,9 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
                     Text(
                       '${widget.isEditMode ? 'Edit' : 'Save'} Medication',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: deviceWidth(context) > 750 ? 20 : 14
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: deviceWidth(context) > 750 ? 20 : 14
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1852,8 +1873,8 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
       _timeController.clear();
       _startDateController.clear();
       _endDateController.clear();
-      _selectedIntake = 'Before meal';
-      _selectedFrequency = 'Daily';
+      _selectedIntake = '';
+      _selectedFrequency = '';
       selectedDays = [false, false, false, false, false, false, false];
       _morningSelected = false;
       _afternoonSelected = false;
@@ -1903,10 +1924,21 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.of(context).pop();
-                    AppRouter.replaceWithAllMedication(
-                      context,
-                      pageType: 'addMedication',
-                    );
+
+                    if(widget.ishome){
+                      print("HOME log !!");
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => MainPage(selectedIndex: 3)
+                          ));
+                    } else {
+                      print("allmed log !!");
+                      AppRouter.replaceWithAllMedication(
+                        context,
+                        pageType: 'addMedication',
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
@@ -1939,449 +1971,452 @@ class _AddMedicationPageState extends State<AddMedicationPage> {
         ? screenWidth * 0.98
         : (screenWidth > 700 ? 700 : screenWidth * 0.95);
 
-    return WillPopScope(
-      onWillPop: () async {
-        AppRouter.replaceWithAllMedication(context);
-        return false;
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: AppTheme.primaryColor,
-          elevation: 0,
-          title: Center(
-            child: Text(
-              widget.isEditMode ? 'Edit Medication' : 'Add Medication',
-            ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
+        title: Center(
+          child: Text(
+            widget.isEditMode ? 'Edit Medication' : 'Add Medication',
           ),
-          leading: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Image.asset("lib/assets/Frame.png", height: 40),
-            ),
-          ),
-          actions: [actionMenuItem(context)],
         ),
-        body: Stack(
-          children: [
-            SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: contentWidth),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Medication Name',
-                            style: TextStyle(
-                              fontSize: deviceWidth(context) > 750 ? 20 :14,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Image.asset("lib/assets/Frame.png", height: 40),
+          ),
+        ),
+        actions: [actionMenuItem(context)],
+      ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: contentWidth),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Medication Name',
+                          style: TextStyle(
+                            fontSize: deviceWidth(context) > 750 ? 20 :14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _medicationNameController,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r"[a-zA-Z0-9 ]"),
+                            ),
+                          ],
+                          style: TextStyle(
+                            fontSize: deviceWidth(context) > 750 ? 20 : 14,
+                          ),
+                          decoration: _inputDecoration().copyWith(
+                            hintText: 'Enter Medication name',
+                            hintStyle: TextStyle(color: Colors.grey,fontSize: deviceWidth(context) > 750 ? 20 :14),
+                            enabledBorder: InputBorder.none,
+                            filled: true,
+                            fillColor: Colors.grey.shade100,
+                            errorStyle: TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _medicationNameController,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r"[a-zA-Z0-9 ]"),
-                              ),
-                            ],
-                            style: TextStyle(
-                              fontSize: deviceWidth(context) > 750 ? 20 : 14,
-                            ),
-                            decoration: _inputDecoration().copyWith(
-                              hintText: 'Enter Medication name',
-                              hintStyle: TextStyle(color: Colors.grey,fontSize: deviceWidth(context) > 750 ? 20 :14),
-                              enabledBorder: InputBorder.none,
-                              filled: true,
-                              fillColor: Colors.grey.shade100,
-                              errorStyle: TextStyle(
-                                color: Colors.red,
-                                fontSize: 13,
-                              ),
-                            ),
-                            enabled: widget.customMode ? true : false,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty)
-                                return 'Medication name is required';
-                              if (value.trim().length < 3)
-                                return 'Enter at least 3 characters';
-                              return null;
-                            },
+                          enabled: widget.customMode ? true : false,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty)
+                              return 'Medication name is required';
+                            if (value.trim().length < 3)
+                              return 'Enter at least 3 characters';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Medication Brand',
+                          style: TextStyle(
+                            fontSize: deviceWidth(context) > 750 ? 20 :14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Medication Brand',
-                            style: TextStyle(
-                              fontSize: deviceWidth(context) > 750 ? 20 :14,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _medicationBrandController,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r"[a-zA-Z0-9 ]"),
                             ),
+                          ],
+                          style: TextStyle(
+                            fontSize: deviceWidth(context) > 750 ? 20 : 14,
                           ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _medicationBrandController,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r"[a-zA-Z0-9 ]"),
-                              ),
-                            ],
-                            style: TextStyle(
-                              fontSize: deviceWidth(context) > 750 ? 20 : 14,
-                            ),
-                            decoration: _inputDecoration().copyWith(
-                              hintText: 'Enter Medication brand',
-                              hintStyle:  TextStyle(color: Colors.grey,fontSize: deviceWidth(context) > 750 ? 20 :14),
-                              enabledBorder: InputBorder.none,
-                              filled: true,
-                              fillColor: Colors.grey.shade100,
-                              errorStyle: TextStyle(
-                                color: Colors.red,
-                                fontSize: 13,
-                              ),
-                            ),
-                            enabled: widget.customMode ? true : false,
-                            textAlign: TextAlign.left,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty)
-                                return 'Medication brand is required';
-                              if (value.trim().length < 3)
-                                return 'Enter at least 3 characters';
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      height: 110,
-                                      child: _buildDateField(
-                                        'Start Date',
-                                        _startDateController,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty)
-                                            return 'Start Date is required';
-                                          // update End Date validation
-                                          if (!isValidMMDDYYYY(value)) {
-                                            return 'Invalid date format (MM/DD/YYYY)';
-                                          }
-                                          WidgetsBinding.instance
-                                              .addPostFrameCallback((_) {
-                                                _formKey.currentState
-                                                    ?.validate();
-                                              });
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      height: 110,
-                                      child: _buildDateField(
-                                        'End Date',
-                                        _endDateController,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return 'End Date is required';
-                                          }
-
-                                          if (!isValidMMDDYYYY(value)) {
-                                            return 'Please enter valid date format (MM/DD/YYYY)';
-                                          }
-                                          try {
-                                            final startParts =
-                                                _startDateController.text.split(
-                                                  '/',
-                                                );
-                                            final endParts = value.split('/');
-                                            if (startParts.length == 3 &&
-                                                endParts.length == 3) {
-                                              final startDate = DateTime(
-                                                int.parse(startParts[2]),
-                                                int.parse(startParts[1]),
-                                                int.parse(startParts[0]),
-                                              );
-                                              final endDate = DateTime(
-                                                int.parse(endParts[2]),
-                                                int.parse(endParts[1]),
-                                                int.parse(endParts[0]),
-                                              );
-                                              if (endDate.isBefore(startDate))
-                                                return 'End Date cannot be before Start Date';
-                                            }
-                                          } catch (e) {
-                                            return 'Invalid date';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            'Medication Period',
-                            style: TextStyle(
-                              fontSize: deviceWidth(context) > 750 ? 20 :14,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
+                          decoration: _inputDecoration().copyWith(
+                            hintText: 'Enter Medication brand',
+                            hintStyle:  TextStyle(color: Colors.grey,fontSize: deviceWidth(context) > 750 ? 20 :14),
+                            enabledBorder: InputBorder.none,
+                            filled: true,
+                            fillColor: Colors.grey.shade100,
+                            errorStyle: TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          FormField<bool>(
-                            initialValue:
-                                _morningSelected ||
-                                _afternoonSelected ||
-                                _eveningSelected,
-                            autovalidateMode:
-                                AutovalidateMode.onUserInteraction,
-                            validator: (value) {
-                              if (!(_morningSelected ||
-                                  _afternoonSelected ||
-                                  _eveningSelected))
-                                return 'Please select at least one period';
-                              return null;
-                            },
-                            builder: (field) {
-                              return Column(
+                          enabled: widget.customMode ? true : false,
+                          textAlign: TextAlign.left,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty)
+                              return 'Medication brand is required';
+                            if (value.trim().length < 3)
+                              return 'Enter at least 3 characters';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          _buildPeriodCheckbox(
-                                            'Morning',
-                                            _morningSelected,
-                                            (value) => setState(() {
-                                              _morningSelected = value ?? false;
-                                              _selectAllSelected =
-                                                  _morningSelected &&
-                                                  _afternoonSelected &&
-                                                  _eveningSelected;
-                                            }),
-                                          ),
-                                          _buildPeriodCheckbox(
-                                            'Afternoon',
-                                            _afternoonSelected,
-                                            (value) => setState(() {
-                                              _afternoonSelected =
-                                                  value ?? false;
-                                              _selectAllSelected =
-                                                  _morningSelected &&
-                                                  _afternoonSelected &&
-                                                  _eveningSelected;
-                                            }),
-                                          ),
-                                        ],
-                                      ),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          _buildPeriodCheckbox(
-                                            'Evening',
-                                            _eveningSelected,
-                                            (value) => setState(() {
-                                              _eveningSelected = value ?? false;
-                                              _selectAllSelected =
-                                                  _morningSelected &&
-                                                  _afternoonSelected &&
-                                                  _eveningSelected;
-                                            }),
-                                          ),
-                                          _buildPeriodCheckbox(
-                                            'Select All',
-                                            _selectAllSelected,
-                                            (value) => setState(() {
-                                              _selectAllSelected =
-                                                  value ?? false;
-                                              _morningSelected =
-                                                  _selectAllSelected;
-                                              _afternoonSelected =
-                                                  _selectAllSelected;
-                                              _eveningSelected =
-                                                  _selectAllSelected;
-                                            }),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(width: 40),
-                                    ],
-                                  ),
-                                  if (field.hasError)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 15),
-                                      child: Text(
-                                        field.errorText ?? '',
-                                        style: const TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 13,
-                                        ),
-                                      ),
+                                  SizedBox(
+                                    height: 110,
+                                    child: _buildDateField(
+                                      'Start Date',
+                                      _startDateController,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty)
+                                          return 'Start Date is required';
+                                        // update End Date validation
+                                        if (!isValidMMDDYYYY(value)) {
+                                          return 'Invalid date format (MM/DD/YYYY)';
+                                        }
+                                        WidgetsBinding.instance
+                                            .addPostFrameCallback((_) {
+                                          _formKey.currentState
+                                              ?.validate();
+                                        });
+                                        return null;
+                                      },
                                     ),
+                                  ),
+                                  const SizedBox(height: 4),
                                 ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          if (_morningSelected ||
-                              _afternoonSelected ||
-                              _eveningSelected) ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Select time for ${_nextPeriodLabel.isNotEmpty ? _nextPeriodLabel : 'Period'}',
-                                    style:  TextStyle(
-                                      fontSize: deviceWidth(context) > 750 ? 25 :20,
-                                      color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    height: 110,
+                                    child: _buildDateField(
+                                      'End Date',
+                                      _endDateController,
+                                      validator: (value) {
+                                        // ✅ End Date is OPTIONAL
+                                        if (value == null || value.trim().isEmpty) {
+                                          return null;
+                                        }
+
+                                        // ✅ Validate format only if user typed something
+                                        if (!isValidMMDDYYYY(value)) {
+                                          return 'Please enter valid date format (MM/DD/YYYY)';
+                                        }
+
+                                        try {
+                                          final startText = _startDateController.text.trim();
+
+                                          // If start date is missing or invalid, skip comparison
+                                          if (startText.isEmpty || !isValidMMDDYYYY(startText)) {
+                                            return null;
+                                          }
+
+                                          final startParts = startText.split('/');
+                                          final endParts = value.split('/');
+
+                                          final startDate = DateTime(
+                                            int.parse(startParts[2]),
+                                            int.parse(startParts[1]),
+                                            int.parse(startParts[0]),
+                                          );
+
+                                          final endDate = DateTime(
+                                            int.parse(endParts[2]),
+                                            int.parse(endParts[1]),
+                                            int.parse(endParts[0]),
+                                          );
+
+                                          if (endDate.isBefore(startDate)) {
+                                            return 'End Date cannot be before Start Date';
+                                          }
+                                        } catch (_) {
+                                          return 'Invalid date';
+                                        }
+
+                                        return null;
+                                      },
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 1),
-                                Expanded(
-                                  child: Container(
-                                    width: 150,
-                                    height: 60,
-                                    padding: const EdgeInsets.all(6.0),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.grey[200],
-                                    ),
-                                    child: Row(
+                                  const SizedBox(height: 4),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'Medication Period',
+                          style: TextStyle(
+                            fontSize: deviceWidth(context) > 750 ? 20 :14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        FormField<bool>(
+                          initialValue:
+                          _morningSelected ||
+                              _afternoonSelected ||
+                              _eveningSelected,
+                          autovalidateMode:
+                          AutovalidateMode.onUserInteraction,
+                          validator: (value) {
+                            if (!(_morningSelected ||
+                                _afternoonSelected ||
+                                _eveningSelected))
+                              return 'Please select at least one period';
+                            return null;
+                          },
+                          builder: (field) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                       children: [
-                                        Expanded(
-                                          child: TextFormField(
-                                            controller: _timeController,
-                                            readOnly: true,
-                                            // NOTE: we intentionally don't block form submission here.
-                                            decoration: InputDecoration(
-                                              hintText:
-                                                  (_nextPeriodLabel == 'Period')
-                                                  ? 'Tap clock to set time'
-                                                  : 'Select time for $_nextPeriodLabel',
-                                              hintStyle: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 : 16),
-                                              filled: true,
-                                              fillColor: Colors.white,
-                                              border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                borderSide: BorderSide.none,
-                                              ),
-                                              isDense: true,
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 8,
-                                                  ),
-                                            ),
-                                          ),
+                                        _buildPeriodCheckbox(
+                                          'Morning',
+                                          _morningSelected,
+                                              (value) => setState(() {
+                                            _morningSelected = value ?? false;
+                                            _selectAllSelected =
+                                                _morningSelected &&
+                                                    _afternoonSelected &&
+                                                    _eveningSelected;
+                                          }),
                                         ),
-                                        const SizedBox(width: 8),
-                                        GestureDetector(
-                                          onTap: () =>
-                                              _selectTimeForSelectedPeriods(
-                                                context,
-                                              ),
-                                          child: Icon(
-                                            Icons.access_time_filled_outlined,
-                                            color: AppTheme.primaryColor,
-                                            size: deviceWidth(context) > 750 ? 35 :24,
-                                          ),
+                                        _buildPeriodCheckbox(
+                                          'Afternoon',
+                                          _afternoonSelected,
+                                              (value) => setState(() {
+                                            _afternoonSelected =
+                                                value ?? false;
+                                            _selectAllSelected =
+                                                _morningSelected &&
+                                                    _afternoonSelected &&
+                                                    _eveningSelected;
+                                          }),
                                         ),
                                       ],
                                     ),
+                                    Column(
+                                      crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                      children: [
+                                        _buildPeriodCheckbox(
+                                          'Evening',
+                                          _eveningSelected,
+                                              (value) => setState(() {
+                                            _eveningSelected = value ?? false;
+                                            _selectAllSelected =
+                                                _morningSelected &&
+                                                    _afternoonSelected &&
+                                                    _eveningSelected;
+                                          }),
+                                        ),
+                                        _buildPeriodCheckbox(
+                                          'Select All',
+                                          _selectAllSelected,
+                                              (value) => setState(() {
+                                            _selectAllSelected =
+                                                value ?? false;
+                                            _morningSelected =
+                                                _selectAllSelected;
+                                            _afternoonSelected =
+                                                _selectAllSelected;
+                                            _eveningSelected =
+                                                _selectAllSelected;
+                                          }),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 40),
+                                  ],
+                                ),
+                                if (field.hasError)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 15),
+                                    child: Text(
+                                      field.errorText ?? '',
+                                      style: const TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        if (_morningSelected ||
+                            _afternoonSelected ||
+                            _eveningSelected) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Select time for ${_nextPeriodLabel.isNotEmpty ? _nextPeriodLabel : 'Period'}',
+                                  style:  TextStyle(
+                                    fontSize: deviceWidth(context) > 750 ? 25 :20,
+                                    color: Colors.black87,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          _buildPreviewAndReset(),
+                              ),
+                              const SizedBox(width: 1),
+                              Expanded(
+                                child: Container(
+                                  width: 150,
+                                  height: 60,
+                                  padding: const EdgeInsets.all(6.0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.grey[200],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextFormField(
+                                          controller: _timeController,
+                                          readOnly: true,
+                                          // NOTE: we intentionally don't block form submission here.
+                                          decoration: InputDecoration(
+                                            hintText:
+                                            (_nextPeriodLabel == 'Period')
+                                                ? 'Tap clock to set time'
+                                                : 'Select time for $_nextPeriodLabel',
+                                            hintStyle: TextStyle(fontSize: deviceWidth(context) > 750 ? 20 : 16),
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                              BorderRadius.circular(8),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            isDense: true,
+                                            contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 8,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      GestureDetector(
+                                        onTap: () =>
+                                            _selectTimeForSelectedPeriods(
+                                              context,
+                                            ),
+                                        child: Icon(
+                                          Icons.access_time_filled_outlined,
+                                          color: AppTheme.primaryColor,
+                                          size: deviceWidth(context) > 750 ? 35 :24,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 16),
-                          _buildSelectedSlots(),
-                          const SizedBox(height: 16),
-                          _buildIntakeDropdown(),
-                          const SizedBox(height: 16),
-                          _buildDoseDescription(),
-                          const SizedBox(height: 16),
-                          _buildFrequencyDropdown(),
-                          const SizedBox(height: 16),
-                          _buildDaySelector(),
-                          const SizedBox(height: 16),
-                          _buildAddToListCheckbox(),
-                          const SizedBox(height: 24),
-                          _buildBottomButtons(),
-                          const SizedBox(height: 40),
                         ],
-                      ),
+                        _buildPreviewAndReset(),
+                        const SizedBox(height: 16),
+                        _buildSelectedSlots(),
+                        const SizedBox(height: 16),
+                        _buildIntakeDropdown(),
+                        const SizedBox(height: 16),
+                        _buildDoseDescription(),
+                        const SizedBox(height: 16),
+                        _buildFrequencyDropdown(),
+                        const SizedBox(height: 16),
+                        _buildDaySelector(),
+                        const SizedBox(height: 16),
+                        _buildAddToListCheckbox(),
+                        const SizedBox(height: 24),
+                        _buildBottomButtons(),
+                        const SizedBox(height: 40),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-            // Loading overlay for long operations like save/update
-            if ((_isLoading ?? false) || _isSaving)
-              Positioned.fill(
-                child: AbsorbPointer(
-                  absorbing: true,
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const CircularProgressIndicator(
-                                color: AppTheme.primaryColor,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                _isSaving
-                                    ? 'Saving medication...'
-                                    : 'Loading...',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ],
-                          ),
+          ),
+          // Loading overlay for long operations like save/update
+          if ((_isLoading ?? false) || _isSaving)
+            Positioned.fill(
+              child: AbsorbPointer(
+                absorbing: true,
+                child: Container(
+                  alignment: Alignment.center,
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(
+                              color: AppTheme.primaryColor,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _isSaving
+                                  ? 'Saving medication...'
+                                  : 'Loading...',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

@@ -28,111 +28,123 @@ class AddBodyMassIndexPage extends ConsumerWidget {
     debugPrint("Device Height 19 @@ ${deviceHeight(context)}");
     final curPastAsync = ref.watch(currentAndPastProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-          title: Center(child: const Text('Add Body Mass Index')),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              bottom: Radius.circular(isHome!?24:0),
-            ),
-          ),
-          leading: isHome!? ProfileAvatar():GestureDetector(
-            onTap: () {
-              if(navFromPage == NavPageType.home.name || navFromPage == null){
-                AppRouter.replaceWithHome(context);
-              }else{
-                Navigator.pop(context);
-              }
-
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Image.asset("lib/assets/Frame.png"),
-            ),
-          ),
-          backgroundColor: AppTheme.primaryColor,
-        actions: [
-          isHome!?Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: NotificationBadgeIcon(),
-          ):actionMenuItemResponse(
-            context,
-            onOpened: () {
-              debugPrint('Menu opened');
-            },
-            onCanceled: () {
-              debugPrint('Menu dismissed (outside tap)');
-              // ❗ stop API calls here if needed
-            },
-            onSelected: (result) {
-              debugPrint('Selected: $result');
-              if (result == ActionMenuResult.goHome) {
-                AppRouter.navigateToHome(context);
-              }
-            },
-          ),
-        ],
-      ),
-      body: curPastAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) {
-            final isOnline = ref.watch(isOnlineProvider);
-
-            return !isOnline
-                ? ConnectionUnavailable(
-              title: HeartThriveStrings.offlineTitle,
-              description: HeartThriveStrings.offlineMessage,
-              buttonText: "Retry",
-              onRetry: () {
-                ref.invalidate(userDetailsDataProvider);
-                ref.invalidate(currentAndPastProvider);
-              },
-            )
-                : ConnectionUnavailable(
-              title: HeartThriveStrings.userServerIssueTitle,
-              description: HeartThriveStrings.userServerIssueDescription,
-              buttonText: "Retry",
-              onRetry: () {
-                ref.invalidate(userDetailsDataProvider);
-                ref.invalidate(currentAndPastProvider);
-              },
-            );
-          },
-        data: (data) => Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: deviceWidth(context) > 750 ? 450: deviceHeight(context) > 640 ? 380:290,
-                child: BMICalculatorScreen(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result)  async {
+        if (didPop) return;
+        print("printdemo");
+      if(navFromPage == NavPageType.home.name || navFromPage == null){
+        AppRouter.replaceWithHome(context);
+      }else{
+        Navigator.pop(context);
+      }
+    },
+      child: Scaffold(
+        appBar: AppBar(
+            title: Center(child: const Text('Add Body Mass Index')),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(isHome!?24:0),
               ),
-              deviceHeight(context) > 640 ?const SizedBox(height: 15):const SizedBox(height: 10),
-               Text('History (Past 30 days)', style:deviceWidth(context) > 750 ? AppTheme.title20: deviceWidth(context) > 360?AppTheme.title18:AppTheme.title16),
-              deviceHeight(context) > 640 ?const SizedBox(height: 15):const SizedBox(height: 10),
-              Expanded(
-                child: data.history.isEmpty
-                    ? const Center(child: Text("No history yet"))
-                    : ListView.builder(
-                  itemCount: data.history.length,
-                  itemBuilder: (_, i) {
-                    final item = data.history[i];
-                    final category = getBMICategory(item.bmiValue);
-                    return _buildHistoryItem(
-                      date: DateFormatUtil.displayFormatDateBMI(item.recordedAt),
-                      category: item.bmiStatus,
-                      bmi: item.bmiValue.toStringAsFixed(1),
-                      weight: item.weight,
-                      height: item.height,
-                      color: getCategoryColor(category).withAlpha(50),
-                      borderColor: getCategoryColor(category),
-                      context: context
-                    );
-                  },
+            ),
+            leading: isHome!? ProfileAvatar():GestureDetector(
+              onTap: () {
+                if(navFromPage == NavPageType.home.name || navFromPage == null){
+                  AppRouter.replaceWithHome(context);
+                }else{
+                  Navigator.pop(context);
+                }
+
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Image.asset("lib/assets/Frame.png"),
+              ),
+            ),
+            backgroundColor: AppTheme.primaryColor,
+          actions: [
+            isHome!?Padding(
+              padding: EdgeInsets.only(right: 16.0),
+              child: NotificationBadgeIcon(),
+            ):actionMenuItemResponse(
+              context,
+              onOpened: () {
+                debugPrint('Menu opened');
+              },
+              onCanceled: () {
+                debugPrint('Menu dismissed (outside tap)');
+                // ❗ stop API calls here if needed
+              },
+              onSelected: (result) {
+                debugPrint('Selected: $result');
+                if (result == ActionMenuResult.goHome) {
+                  AppRouter.navigateToHome(context);
+                }
+              },
+            ),
+          ],
+        ),
+        body: curPastAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) {
+              final isOnline = ref.watch(isOnlineProvider);
+
+              return !isOnline
+                  ? ConnectionUnavailable(
+                title: HeartThriveStrings.offlineTitle,
+                description: HeartThriveStrings.offlineMessage,
+                buttonText: "Retry",
+                onRetry: () {
+                  ref.invalidate(userDetailsDataProvider);
+                  ref.invalidate(currentAndPastProvider);
+                },
+              )
+                  : ConnectionUnavailable(
+                title: HeartThriveStrings.userServerIssueTitle,
+                description: HeartThriveStrings.userServerIssueDescription,
+                buttonText: "Retry",
+                onRetry: () {
+                  ref.invalidate(userDetailsDataProvider);
+                  ref.invalidate(currentAndPastProvider);
+                },
+              );
+            },
+          data: (data) => Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: deviceWidth(context) > 750 ? 450: deviceHeight(context) > 640 ? 380:290,
+                  child: BMICalculatorScreen(),
                 ),
-              ),
-            ],
+                deviceHeight(context) > 640 ?const SizedBox(height: 15):const SizedBox(height: 10),
+                 Text('History (Past 30 days)', style:deviceWidth(context) > 750 ? AppTheme.title20: deviceWidth(context) > 360?AppTheme.title18:AppTheme.title16),
+                deviceHeight(context) > 640 ?const SizedBox(height: 15):const SizedBox(height: 10),
+                Expanded(
+                  child: data.history.isEmpty
+                      ? const Center(child: Text("No history yet"))
+                      : ListView.builder(
+                    itemCount: data.history.length,
+                    itemBuilder: (_, i) {
+                      final item = data.history[i];
+                      final category = getBMICategory(item.bmiValue);
+                      return _buildHistoryItem(
+                        date: DateFormatUtil.displayFormatDateBMI(item.recordedAt),
+                        category: item.bmiStatus,
+                        bmi: item.bmiValue.toStringAsFixed(1),
+                        weight: item.weight,
+                        height: item.height,
+                        color: getCategoryColor(category).withAlpha(50),
+                        borderColor: getCategoryColor(category),
+                        context: context
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

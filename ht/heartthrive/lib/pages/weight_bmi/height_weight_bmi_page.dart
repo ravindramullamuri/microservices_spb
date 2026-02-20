@@ -275,11 +275,11 @@ class _BMIContentState extends ConsumerState<_BMIContent> {
   Widget build(BuildContext context) {
     final record = widget.currentAndPastData?.currentRecord;
 
-     weight = record != null
+    weight = record != null
         ? parseMeasurement(record.weight)['value']
         : 0.0;
 
-     height = record != null
+    height = record != null
         ? parseMeasurement(record.height)['value']
         : 0.0;
     isKg = record!= null?parseMeasurement(record.weight)['unit'] == 'kg':false;
@@ -414,7 +414,7 @@ class _BMIDialogContentState extends ConsumerState<BMIDialogContent> {
         ref.invalidate(userDetailsDataProvider);
         ref.invalidate(currentAndPastProvider);
         ref.invalidate(heroDashboardProvider);
-       // final token = ref.watch(tokenProvider);
+        // final token = ref.watch(tokenProvider);
         final token = await SecureStorageUtils().read(StorageKeys.accessToken);
         ref.invalidate(notificationProvider);
         ref.read(notificationProvider.notifier).loadFirstPage();
@@ -434,6 +434,56 @@ class _BMIDialogContentState extends ConsumerState<BMIDialogContent> {
       }
     }
   }
+
+  // Future<void> _handleSave() async {
+  //   if (!_validateInputs()) return;
+  //
+  //   setState(() => _isSaving = true);
+  //
+  //   try {
+  //     final currentData = ref.read(currentAndPastProvider).value;
+  //     final currentRecord = currentData?.currentRecord;
+  //
+  //     final log = WeightHeightLog(
+  //       id: currentRecord!.patientWeightHeightId,
+  //       weight: double.parse(widget.weightController.text),
+  //       height: double.parse(widget.heightController.text),
+  //       weightUnitType: isKg ? 'kg' : 'lb',
+  //       heightUnitType: isCm ? 'CM' : 'IN',
+  //     );
+  //
+  //     final isUpdate = currentRecord?.patientWeightHeightId != null;
+  //
+  //     await ref
+  //         .read(weightLogNotifierProvider.notifier)
+  //         .createOrUpdate(log, isUpdate: isUpdate);
+  //
+  //     widget.onSave(
+  //       isKg,
+  //       isCm,
+  //       double.parse(widget.weightController.text),
+  //       double.parse(widget.heightController.text),
+  //     );
+  //
+  //
+  //     // ✅ Only refresh BMI related providers
+  //     ref.invalidate(currentAndPastProvider);
+  //     ref.invalidate(heroDashboardProvider);
+  //     if (mounted) Navigator.pop(context);
+  //
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text("Failed to save: $e")),
+  //       );
+  //     }
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() => _isSaving = false);
+  //     }
+  //   }
+  // }
+
   Future<void> _handleSave() async {
     if (!_validateInputs()) return;
 
@@ -443,39 +493,34 @@ class _BMIDialogContentState extends ConsumerState<BMIDialogContent> {
       final currentData = ref.read(currentAndPastProvider).value;
       final currentRecord = currentData?.currentRecord;
 
+      final newWeight = double.parse(widget.weightController.text);
+      final newHeight = double.parse(widget.heightController.text);
+
       final log = WeightHeightLog(
         id: currentRecord!.patientWeightHeightId,
-        weight: double.parse(widget.weightController.text),
-        height: double.parse(widget.heightController.text),
+        weight: newWeight,
+        height: newHeight,
         weightUnitType: isKg ? 'kg' : 'lb',
         heightUnitType: isCm ? 'CM' : 'IN',
       );
 
-      final isUpdate = currentRecord?.patientWeightHeightId != null;
+      final isUpdate = currentRecord.patientWeightHeightId != null;
 
+      // 1️⃣ Save API
       await ref
           .read(weightLogNotifierProvider.notifier)
           .createOrUpdate(log, isUpdate: isUpdate);
 
-      // Success: Update parent immediately
-      final newWeight = double.parse(widget.weightController.text);
-      final newHeight = double.parse(widget.heightController.text);
-      widget.onSave(isKg, isCm, newWeight, newHeight);
+      // 2️⃣ Invalidate provider
+      ref.invalidate(currentAndPastProvider);
+      ref.invalidate(heroDashboardProvider);
 
+      // 3️⃣ WAIT until provider refresh completes
+      await ref.read(currentAndPastProvider.future);
+
+      // 4️⃣ Now close popup
       if (mounted) Navigator.pop(context);
 
-      // Background refresh — fire and forget
-      Future.microtask(() async{
-        ref.invalidate(currentAndPastProvider);
-        ref.invalidate(heroDashboardProvider);
-        ref.invalidate(userDetailsDataProvider);
-        final token = await SecureStorageUtils().read(StorageKeys.accessToken);
-        ref.invalidate(notificationProvider);
-        ref.read(notificationProvider.notifier).loadFirstPage();
-        if (token != null) {
-          ref.read(userDetailsDataProvider.notifier).loadUser(token: token);
-        }
-      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -554,7 +599,7 @@ class _BMIDialogContentState extends ConsumerState<BMIDialogContent> {
                                     ),
                                   ),
                                 ),
-                               Padding(
+                              Padding(
                                 padding: EdgeInsets.all(8.0),
                                 child: Text(
                                   "Enter your weight & height",
@@ -868,9 +913,9 @@ class _InputCard extends StatelessWidget {
                       child: Text(
                         firstUnit,
                         style: deviceWidth(context) > 750 ? AppTheme.title20.copyWith(
-                          color: isFirstSelected ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.w600)
-                              :AppTheme.title16.copyWith(
+                            color: isFirstSelected ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.w600)
+                            :AppTheme.title16.copyWith(
                           color: isFirstSelected ? Colors.white : Colors.black,
                           fontWeight: FontWeight.w600,
                         ),
@@ -887,8 +932,8 @@ class _InputCard extends StatelessWidget {
                       child: Text(
                         secondUnit,
                         style:deviceWidth(context) > 750 ? AppTheme.title20.copyWith(
-                          color: !isFirstSelected ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.w600 ) :  AppTheme.title16.copyWith(
+                            color: !isFirstSelected ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.w600 ) :  AppTheme.title16.copyWith(
                           color: !isFirstSelected ? Colors.white : Colors.black,
                           fontWeight: FontWeight.w600,
                         ),

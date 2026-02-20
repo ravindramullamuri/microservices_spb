@@ -15,7 +15,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/home',
-      builder: (context, state) => const MainPage(),
+      builder: (context, state) => MainPage(),
     ),
     GoRoute(
       path: '/all-meal-intake',

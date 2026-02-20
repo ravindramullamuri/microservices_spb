@@ -117,7 +117,7 @@ class AppRouter {
       case homeMask:
         return MaterialPageRoute(builder: (_) => const HomeMaskPage());
       case home:
-        return MaterialPageRoute(builder: (_) => const MainPage());
+        return MaterialPageRoute(builder: (_) => MainPage());
       case doctorHome:
         return MaterialPageRoute(builder: (_) => const DoctorHomePage());
       case patientsList:
@@ -197,6 +197,7 @@ class AppRouter {
             editData: args?['editData'] as MealEditData?,   // <-- MODEL
             isEditMode: args?['isEditMode'] as bool? ?? false,
             mealMenuMode: args?['mealMenuMode'] as bool? ?? false,
+            isCustomMode: args?['isCustomMode'] as bool? ?? false,
           ),
         );
 
@@ -277,9 +278,12 @@ class AppRouter {
         args?['symptomModel'];
         final bool? isEdit =
         args?['isEdit'];
+        final bool? isHome =
+        args?['isHome'];
         return MaterialPageRoute(builder: (_) => AddSymptomsScreen(
           symptomModel: symptomModel,
-          isEdit: isEdit??false,
+          isEdit: isEdit?? false,
+          isHome: isHome?? true,
         ));
       default:
         return MaterialPageRoute(
@@ -435,7 +439,8 @@ class AppRouter {
       BuildContext context, {
         final MealEditData? editData,
         bool isEditMode = false,
-        bool mealMenuMode = false
+        bool mealMenuMode = false,
+        bool isCustomMode = false,
       }) async {
     return await Navigator.pushNamed(
       context,
@@ -443,7 +448,8 @@ class AppRouter {
       arguments: {
         'editData': editData,
         'isEditMode': isEditMode,
-        'mealMenuMode': mealMenuMode
+        'mealMenuMode': mealMenuMode,
+        'isCustomMode' : isCustomMode
       },
     );
   }
@@ -754,15 +760,16 @@ class AppRouter {
   static void navigateToPatientTermsConditions(BuildContext context) {
     Navigator.pushNamed(context, patientTermsConditions);
   }
-  static void navigateToAddSymptoms(BuildContext context) {
-    Navigator.pushNamed(context, addSymptoms);
+  static void navigateToAddSymptoms(BuildContext context, isHome) {
+    Navigator.pushNamed(context, addSymptoms, arguments: {"isHome": isHome});
   }
-  static void navigateToAddSymptomsWithEdit(BuildContext context,SymptomModel symptomModel,bool isEdit) {
+  static void navigateToAddSymptomsWithEdit(BuildContext context,SymptomModel symptomModel,bool isEdit, bool isHome) {
     Navigator.pushNamed(context,
         addSymptoms,
         arguments: {
         "symptomModel":symptomModel,
-          "isEdit":isEdit
+          "isEdit":isEdit,
+          "isHome":isHome
         }
     );
   }

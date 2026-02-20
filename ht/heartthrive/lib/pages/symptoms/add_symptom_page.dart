@@ -17,8 +17,9 @@ import 'custom_symptoms_widget.dart';
 class AddSymptomsScreen extends ConsumerStatefulWidget {
   final SymptomModel? symptomModel;
   final bool? isEdit;
+  final bool? isHome;
 
-  const AddSymptomsScreen({super.key, this.symptomModel, this.isEdit});
+  const AddSymptomsScreen({super.key, this.symptomModel, this.isEdit, this.isHome});
 
   @override
   ConsumerState<AddSymptomsScreen> createState() => _AddSymptomsScreenState();
@@ -41,6 +42,7 @@ class _AddSymptomsScreenState extends ConsumerState<AddSymptomsScreen> with Widg
 
   bool isLoading = false;
   bool isKeyBoardOpen = false;
+  String? customSymptomError;
 
   final List<String> options = const ["Mild", "Moderate", "Severe"];
 
@@ -83,37 +85,51 @@ class _AddSymptomsScreenState extends ConsumerState<AddSymptomsScreen> with Widg
   }
 
   void _validateAndSubmit() async {
-    setState(() => isLoading = true);
+    final customText = symptomController.text.trim();
 
+    /// 🔥 Reset all errors first
     setState(() {
       swellingToLegsError = null;
       shortOfBreathWithActivityError = null;
       shortOfBreathWhenLyingFlatError = null;
       wakingUpAtNightShortOfBreathError = null;
+      customSymptomError = null;
     });
 
-    final customText = symptomController.text.trim();
-
-    // Your original validation logic preserved
-    if (swellingToLegs == null &&
-        shortOfBreathWithActivity == null &&
-        shortOfBreathWhenLyingFlat == null &&
-        wakingUpAtNightShortOfBreath == null &&
-        customText.length < 3) {
-      if (customText.isNotEmpty && customText.length < 3) {
-        setState(() => isLoading = false);
-        return;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Please select at least one symptom or enter a custom symptom."),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() => isLoading = false);
-        return;
-      }
+    /// --------------------------------------------------
+    /// ✅ Custom symptom validation
+    /// --------------------------------------------------
+    if (customText.isNotEmpty && customText.length < 3) {
+      setState(() {
+        customSymptomError = "Minimum 3 characters required";
+      });
+      return; // 🚫 STOP SAVE
     }
+
+    /// --------------------------------------------------
+    /// ✅ At least one symptom required
+    /// --------------------------------------------------
+    final hasDropdownSymptom =
+        swellingToLegs != null ||
+            shortOfBreathWithActivity != null ||
+            shortOfBreathWhenLyingFlat != null ||
+            wakingUpAtNightShortOfBreath != null;
+
+    if (!hasDropdownSymptom && customText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select at least one symptom or enter a custom symptom."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // 🚫 STOP SAVE
+    }
+
+    /// --------------------------------------------------
+    /// ✅ Start loading only after validation passes
+    /// --------------------------------------------------
+    setState(() => isLoading = true);
+
     final token = await SecureStorageUtils().read(StorageKeys.accessToken);
     UserDetails? userDetails = ref.read(userDetailsDataProvider).value;
 
@@ -203,7 +219,12 @@ class _AddSymptomsScreenState extends ConsumerState<AddSymptomsScreen> with Widg
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    AppRouter.navigateToHome(context);
+                    if(widget.isHome?? true) {
+                      AppRouter.replaceWithHome(context);
+                    }else{
+                      Navigator.pop(context);
+                      AppRouter.replaceWithHeartRiskDashboard(context);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
@@ -217,6 +238,14 @@ class _AddSymptomsScreenState extends ConsumerState<AddSymptomsScreen> with Widg
         ),
       ),
     );
+  }
+
+  void _backTap(BuildContext context) {
+    if(widget.isHome?? true) {
+      AppRouter.replaceWithHome(context);
+    }else{
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -250,175 +279,195 @@ class _AddSymptomsScreenState extends ConsumerState<AddSymptomsScreen> with Widg
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQueryData.fromView(View.of(context)).viewInsets.bottom;
     print("keyboardHeight @@ $keyboardHeight");
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Stack(
-        children: [
-          Scaffold(
-            resizeToAvoidBottomInset: false,
-            appBar: AppBar(
-              title: Center(child: Text("${widget.isEdit == true ? 'Edit' : 'Add'} Symptoms")),
-              backgroundColor: const Color(0xFF8C1B1A),
-              foregroundColor: Colors.white,
-              leading: GestureDetector(
-                onTap: () => AppRouter.replaceWithHome(context),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Image.asset("lib/assets/Frame.png"),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        if (FocusScope.of(context).hasFocus) {
+          FocusScope.of(context).unfocus();
+          return;
+        }
+
+        _backTap(context);
+      },
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            Scaffold(
+              resizeToAvoidBottomInset: false,
+              appBar: AppBar(
+                title: Center(child: Text("${widget.isEdit == true ? 'Edit' : 'Add'} Symptoms")),
+                backgroundColor: const Color(0xFF8C1B1A),
+                foregroundColor: Colors.white,
+                leading: GestureDetector(
+                  onTap: () => _backTap(context),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Image.asset("lib/assets/Frame.png"),
+                  ),
                 ),
+                actions: [actionMenuItem(context)],
               ),
-              actions: [actionMenuItem(context)],
-            ),
-            body: SafeArea(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Today's Symptoms", style: AppTheme.title18),
-                    const SizedBox(height: 20),
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Today's Symptoms", style: AppTheme.title18),
+                      const SizedBox(height: 20),
 
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildDropdown(
-                              label: "Swelling to legs",
-                              value: swellingToLegs,
-                              onChanged: (v) => setState(() {
-                                swellingToLegs = v;
-                                swellingToLegsError = null;
-                              }),
-                              errorText: swellingToLegsError,
-                            ),
-                            _buildDropdown(
-                              label: "Short of breath with activity",
-                              value: shortOfBreathWithActivity,
-                              onChanged: (v) => setState(() {
-                                shortOfBreathWithActivity = v;
-                                shortOfBreathWithActivityError = null;
-                              }),
-                              errorText: shortOfBreathWithActivityError,
-                            ),
-                            _buildDropdown(
-                              label: "Short of breath when lying flat",
-                              value: shortOfBreathWhenLyingFlat,
-                              onChanged: (v) => setState(() {
-                                shortOfBreathWhenLyingFlat = v;
-                                shortOfBreathWhenLyingFlatError = null;
-                              }),
-                              errorText: shortOfBreathWhenLyingFlatError,
-                            ),
-                            _buildDropdown(
-                              label: "Waking up at night short of breath",
-                              value: wakingUpAtNightShortOfBreath,
-                              onChanged: (v) => setState(() {
-                                wakingUpAtNightShortOfBreath = v;
-                                wakingUpAtNightShortOfBreathError = null;
-                              }),
-                              errorText: wakingUpAtNightShortOfBreathError,
-                            ),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildDropdown(
+                                label: "Swelling to legs",
+                                value: swellingToLegs,
+                                onChanged: (v) => setState(() {
+                                  swellingToLegs = v;
+                                  swellingToLegsError = null;
+                                }),
+                                errorText: swellingToLegsError,
+                              ),
+                              _buildDropdown(
+                                label: "Short of breath with activity",
+                                value: shortOfBreathWithActivity,
+                                onChanged: (v) => setState(() {
+                                  shortOfBreathWithActivity = v;
+                                  shortOfBreathWithActivityError = null;
+                                }),
+                                errorText: shortOfBreathWithActivityError,
+                              ),
+                              _buildDropdown(
+                                label: "Short of breath when lying flat",
+                                value: shortOfBreathWhenLyingFlat,
+                                onChanged: (v) => setState(() {
+                                  shortOfBreathWhenLyingFlat = v;
+                                  shortOfBreathWhenLyingFlatError = null;
+                                }),
+                                errorText: shortOfBreathWhenLyingFlatError,
+                              ),
+                              _buildDropdown(
+                                label: "Waking up at night short of breath",
+                                value: wakingUpAtNightShortOfBreath,
+                                onChanged: (v) => setState(() {
+                                  wakingUpAtNightShortOfBreath = v;
+                                  wakingUpAtNightShortOfBreathError = null;
+                                }),
+                                errorText: wakingUpAtNightShortOfBreathError,
+                              ),
 
-                            Padding(
-                              padding: const EdgeInsets.all(0.0),
-                              child: CustomSymptomInput(
-                                controller: symptomController,
-                                maxLength: 150,
-                                focusNode: _customSymptomFocus,
-                                onChanged: (val) {
-                                  // Optional: can keep _scrollToField() here too
+                              Padding(
+                                padding: const EdgeInsets.all(0.0),
+                                child: CustomSymptomInput(
+                                  controller: symptomController,
+                                  maxLength: 150,
+                                  focusNode: _customSymptomFocus,
+                                  errorText: customSymptomError,
+                                  onChanged: (val) {
+                                    final text = val.trim();
+
+                                    if (text.isNotEmpty && text.length < 3) {
+                                      setState(() => customSymptomError = "Minimum 3 characters required");
+                                    } else {
+                                      setState(() => customSymptomError = null);
+                                    }
+                                  },
+                                ),
+                              ),
+
+                              const SizedBox(height: 30),
+
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  double buttonWidth = (constraints.maxWidth - 12) / 2;
+                                  buttonWidth = buttonWidth.clamp(120.0, 300.0);
+                                  double fontSize = (buttonWidth / 20).clamp(12.0, 16.0);
+
+                                  return Row(
+                                    children: [
+                                      ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minWidth: buttonWidth,
+                                          maxWidth: buttonWidth,
+                                        ),
+                                        child: OutlinedButton(
+                                          onPressed: _clearAll,
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: const Color(0xFF8C1B1A),
+                                            side: const BorderSide(color: Color(0xFF8C1B1A)),
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
+                                          child: Text(
+                                            "Clear All",
+                                            style: AppTheme.title16.copyWith(fontSize: fontSize),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minWidth: buttonWidth,
+                                          maxWidth: buttonWidth,
+                                        ),
+                                        child: ElevatedButton(
+                                          onPressed: _validateAndSubmit,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppTheme.primaryColor,
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                "${widget.isEdit == true ? 'Edit' : 'Add'} Symptoms",
+                                                style: AppTheme.title16.copyWith(
+                                                  color: Colors.white,
+                                                  fontSize: fontSize,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              const Icon(Icons.add_circle, color: Colors.white, size: 16),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
                                 },
                               ),
-                            ),
-
-                            const SizedBox(height: 30),
-
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                double buttonWidth = (constraints.maxWidth - 12) / 2;
-                                buttonWidth = buttonWidth.clamp(120.0, 300.0);
-                                double fontSize = (buttonWidth / 20).clamp(12.0, 16.0);
-
-                                return Row(
-                                  children: [
-                                    ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        minWidth: buttonWidth,
-                                        maxWidth: buttonWidth,
-                                      ),
-                                      child: OutlinedButton(
-                                        onPressed: _clearAll,
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: const Color(0xFF8C1B1A),
-                                          side: const BorderSide(color: Color(0xFF8C1B1A)),
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                        ),
-                                        child: Text(
-                                          "Clear All",
-                                          style: AppTheme.title16.copyWith(fontSize: fontSize),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        minWidth: buttonWidth,
-                                        maxWidth: buttonWidth,
-                                      ),
-                                      child: ElevatedButton(
-                                        onPressed: _validateAndSubmit,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppTheme.primaryColor,
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              "${widget.isEdit == true ? 'Edit' : 'Add'} Symptoms",
-                                              style: AppTheme.title16.copyWith(
-                                                color: Colors.white,
-                                                fontSize: fontSize,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            const Icon(Icons.add_circle, color: Colors.white, size: 16),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 20),
-                          ],
+                              const SizedBox(height: 20),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    // ← This is the key part: automatically expands with keyboard
-                    SizedBox(height: isKeyBoardOpen ? keyboardHeight + 280 : 10),
-                  ],
+                      // ← This is the key part: automatically expands with keyboard
+                      SizedBox(height: isKeyBoardOpen ? keyboardHeight + 280 : 10),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          if (isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(
-                child: CircularProgressIndicator(color: AppTheme.primaryColor),
+            if (isLoading)
+              Container(
+                color: Colors.black.withOpacity(0.3),
+                child: const Center(
+                  child: CircularProgressIndicator(color: AppTheme.primaryColor),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

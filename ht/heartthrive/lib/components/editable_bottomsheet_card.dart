@@ -1424,7 +1424,7 @@ void showQuickNavigationBottomSheet(BuildContext context, String pageType) {
                   Colors.pink,
                   () {
                     Navigator.pop(context);
-                    AppRouter.navigateToAddSymptoms(context);
+                    AppRouter.navigateToAddSymptoms(context, true);
                   },
                   context,
                 ),

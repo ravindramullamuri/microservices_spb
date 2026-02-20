@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:heart_thrive/constants/ui_constants.dart';
 import 'package:heart_thrive/pages/meal-sodium/user_today_food.dart';
 import 'package:heart_thrive/pages/medication/all_medication_page.dart';
 import 'package:heart_thrive/pages/riskmeter/risk_meter_dashboard.dart';
+import 'package:heart_thrive/pages/subscription/subscription_overlay.dart';
 import 'package:heart_thrive/pages/weight_bmi/add_body_mass_index_page.dart';
 import 'package:heart_thrive/providers/token_provider.dart';
 import 'package:heart_thrive/providers/user/user_details_provider.dart';
@@ -39,16 +41,18 @@ import 'medication/medication_home_card.dart';
 import 'notification_badgeicon_widget.dart';
 
 class MainPage extends ConsumerStatefulWidget {
-  const MainPage({super.key});
+  int? selectedIndex = 0;
+  MainPage({ this.selectedIndex});
 
   @override
   ConsumerState<MainPage> createState() => _MainPageState();
 }
 
 class _MainPageState extends ConsumerState<MainPage> {
-  int _selectedIndex = 0;
+  late int _selectedIndex = widget.selectedIndex ?? 0;
   int _homeRefreshKey = 0;
   DateTime? _lastBackPress;
+  bool? subscriptionIsExpire = false;
 
   List<Widget> get _pages => [
     HomePage(key: ValueKey(_homeRefreshKey)),
@@ -74,6 +78,7 @@ class _MainPageState extends ConsumerState<MainPage> {
     "medication",
     "weight",
   ];
+
   @override
   void initState() {
     super.initState();
@@ -172,9 +177,15 @@ class _MainPageState extends ConsumerState<MainPage> {
           _handleBack();
         }
       },
-      child: Scaffold(
-        body: IndexedStack(index: _selectedIndex, children: _pages),
-        bottomNavigationBar: _buildBottomNav(),
+      child: Stack(
+        children: [
+          Scaffold(
+            body: IndexedStack(index: _selectedIndex, children: _pages),
+            bottomNavigationBar: _buildBottomNav(),
+          ),
+          if(subscriptionIsExpire!)
+           const SubscriptionExpiredOverlay(),
+        ],
       ),
     );
   }
@@ -411,6 +422,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   double _weightChange48h = 0.0;
   String? _bmiStatusLabel;
 
+
   // Navbar Index
   int _selectedIndex = 0;
 
@@ -456,8 +468,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     debugPrint("HomePage initialized for user: ${UserService.userFirstName}");
   }
 
-  bool _isPageLoading() {
-    return (_isLoadingSodiumData || _isLoadingMedicationData);
+  bool _isPageLoading(AsyncValue riskAsync) {
+    return (
+        _isLoadingSodiumData ||
+            _isLoadingMedicationData ||
+            riskAsync.isLoading
+    );
   }
 
   @override
@@ -496,6 +512,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final userDetailsAsync = ref.watch(userDetailsDataProvider);
+    final riskAsync = ref.watch(riskMetricsFutureProvider);
     final hero = ref.watch(heroDashboardProvider);
     return userDetailsAsync.when(
       data: (user) {
@@ -528,10 +545,37 @@ class _HomePageState extends ConsumerState<HomePage> {
                   bottom: Radius.circular(24),
                 ),
               ),
-              leading: userProfileAvatar(
-                context: context,
-                user: user,
-                isNavigate: true,
+              leading: InkWell(
+                onTap: () async {
+                  final result = await AppRouter.navigateToProfile(context);
+
+                  if (result == true) {
+                    ref.invalidate(riskMetricsFutureProvider);
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 15, top: 8, bottom: 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: user?.profileImage == null
+                        ? Image.asset(
+                      'lib/assets/default_profile_img.png',
+                      gaplessPlayback: true,
+                      width: 36,
+                      height: 36,
+                      fit: BoxFit.cover,
+                    )
+                        : Image.memory(
+                      base64Decode(user!.profileImage!),
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      width: 36,
+                      height: 36,
+                      errorBuilder: (context, error, stack) =>
+                      const Icon(Icons.account_circle, color: Colors.white),
+                    ),
+                  ),
+                ),
               ),
               title: Container(
                 alignment: Alignment.centerLeft,
@@ -571,12 +615,12 @@ class _HomePageState extends ConsumerState<HomePage> {
             // ---------------------------------------------------------
             body: RefreshIndicator(
               onRefresh: () => _refresh(),
-              child: _isPageLoading()
+              child: _isPageLoading(riskAsync)
                   ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppTheme.primaryColor,
-                      ),
-                    )
+                child: CircularProgressIndicator(
+                  color: AppTheme.primaryColor,
+                ),
+              )
                   : SafeArea(
                       child: SingleChildScrollView(
                         child: Padding(
@@ -623,6 +667,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ),
 
                               const SizedBox(height: 20),
+
                             ],
                           ),
                         ),

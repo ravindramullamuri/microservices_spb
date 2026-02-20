@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heart_thrive/constants/ui_constants.dart';
 import 'package:heart_thrive/pages/landing_page.dart';
+import 'package:heart_thrive/providers/bmi/bmi_provider.dart';
 import 'package:heart_thrive/utils/fcm_util.dart';
 import 'package:heart_thrive/utils/secure_storage_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -82,6 +83,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _loadProfileData() async {
+    print("profile init!!");
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -114,527 +116,540 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget build(BuildContext context) {
     final userDetailsAsync = ref.watch(userDetailsDataProvider);
     final user = userDetailsAsync.asData?.value;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: AppTheme.primaryColor,
-        elevation: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(24), // 👈 Adjust the roundness
-          ),
-        ),
-        leading: GestureDetector(
-          onTap: () {
-            if (widget.navFromPage == NavPageType.home.name ||
-                widget.navFromPage == NavPageType.addMedication.name) {
-              AppRouter.replaceWithHome(context);
-            } else {
-              Navigator.pop(context);
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Image.asset("lib/assets/Frame.png"),
-          ),
-        ),
-        title: const Center(
-          child: Text(
-            'Profile',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+
+    final currentAndPastAsync = ref.watch(currentAndPastProvider);
+    final record = currentAndPastAsync.asData?.value?.currentRecord;
+    return PopScope(
+      canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (widget.navFromPage == NavPageType.home.name ||
+            widget.navFromPage == NavPageType.addMedication.name) {
+          print("pTest 1");
+          AppRouter.replaceWithHome(context);
+        } else {
+          print("pTest 2");
+          Navigator.pop(context, true);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: AppTheme.primaryColor,
+          elevation: 0,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(24), // 👈 Adjust the roundness
             ),
           ),
-        ),
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: NotificationBadgeIcon(),
+          leading: GestureDetector(
+            onTap: () {
+              if (widget.navFromPage == NavPageType.home.name ||
+                  widget.navFromPage == NavPageType.addMedication.name) {
+                print("pTest 1");
+                AppRouter.replaceWithHome(context);
+              } else {
+                print("pTest 2");
+                Navigator.pop(context, true);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Image.asset("lib/assets/Frame.png"),
+            ),
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          userDetailsAsync.when(
-            data: (user) {
-              if (user == null) {
+          title: const Center(
+            child: Text(
+              'Profile',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: 16.0),
+              child: NotificationBadgeIcon(),
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            userDetailsAsync.when(
+              data: (user) {
+                if (user == null) {
+                  final isOnline = ref.watch(isOnlineProvider);
+
+                  return !isOnline
+                      ? ConnectionUnavailable(
+                    title: HeartThriveStrings.offlineTitle,
+                    description: HeartThriveStrings.offlineMessage,
+                    buttonText: "Retry",
+                    onRetry: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              MyApp(initialToken: ref.watch(tokenProvider)),
+                        ),
+                      );
+                    },
+                  )
+                      : ConnectionUnavailable(
+                    title: HeartThriveStrings.userServerIssueTitle,
+                    description:
+                    HeartThriveStrings.userServerIssueDescription,
+                    buttonText: "Retry",
+                    onRetry: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              MyApp(initialToken: ref.watch(tokenProvider)),
+                        ),
+                      );
+                    },
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () => _refresh(),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 24),
+
+                        // Profile Section
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            children: [
+                              // Profile Image
+                              GestureDetector(
+                                onTap: () async {
+                                  if (Platform.isIOS) {
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: true,
+                                      builder: (context) {
+                                        return Dialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(16),
+                                            height: deviceWidth(context) > 750
+                                                ? 400
+                                                : 320,
+                                            child: Column(
+                                              children: [
+                                                Expanded(
+                                                  child: ProfileImageUploader(
+                                                    userId: user.id,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    /* bool allowed = await _checkPhotoPermission();  // <-- permission check
+                                      if (!allowed) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text("Permission required to access photos")),
+                                        );
+                                        return;
+                                      }*/
+
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: true,
+                                      builder: (context) {
+                                        return Dialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(16),
+                                            height: deviceWidth(context) > 750
+                                                ? 400
+                                                : 320,
+                                            child: Column(
+                                              children: [
+                                                Expanded(
+                                                  child: ProfileImageUploader(
+                                                    userId: user.id,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  }
+                                },
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    // Profile Circle
+                                    Container(
+                                      width: deviceWidth(context) > 750
+                                          ? 200
+                                          : 100,
+                                      height: deviceWidth(context) > 750
+                                          ? 200
+                                          : 100,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: AppTheme.primaryColor.withValues(
+                                            alpha: 0.4,
+                                          ),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: ClipOval(
+                                        child: user.profileImage == null
+                                            ? Image.asset(
+                                          'lib/assets/default_profile_image_rounded.png',
+                                          fit: BoxFit.cover,
+                                          width: deviceWidth(context) > 750
+                                              ? 200
+                                              : 100,
+                                          height: deviceWidth(context) > 750
+                                              ? 200
+                                              : 100,
+                                        )
+                                            : Image.memory(
+                                          base64Decode(user.profileImage!),
+                                          gaplessPlayback: true,
+                                          width: deviceWidth(context) > 750
+                                              ? 200
+                                              : 100,
+                                          height: deviceWidth(context) > 750
+                                              ? 200
+                                              : 100,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                              ) => Icon(
+                                            Icons.account_circle,
+                                            size:
+                                            deviceWidth(context) >
+                                                750
+                                                ? 120
+                                                : 80,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    // Edit Icon at bottom-right
+                                    /*Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primaryColor,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Colors.white, width: 2),
+                                          ),
+                                          child:  Image.asset(
+                                           "lib/assets/Edit_Profile.png"
+                                          ),
+                                        ),
+                                      )*/
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        width: deviceWidth(context) > 750
+                                            ? 55
+                                            : 32,
+                                        height: deviceWidth(context) > 750
+                                            ? 55
+                                            : 32,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryColor,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                          size: deviceWidth(context) > 750
+                                              ? 35
+                                              : 18,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16), // Name
+                              Text(
+                                '${user.firstname} ${user.lastname}',
+                                style: deviceWidth(context) > 750
+                                    ? AppTheme.title30
+                                    : AppTheme.title20,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+
+                              const SizedBox(height: 4),
+
+                              // Email
+                              Text(
+                                user.email!,
+                                style: TextStyle(
+                                  fontSize: deviceWidth(context) > 750 ? 20 : 14,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        // Stats Cards
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Stack(
+                                  children: [
+                                    buildStatCard(
+                                      'Weight',
+                                      record?.weight ?? user.weight ?? "0",
+                                      'lib/assets/Scale.png',
+                                      Colors.white,
+                                      context,
+                                      user,
+                                    ),
+                                    // Right-side shorter border line
+                                    Positioned(
+                                      top: 30,
+                                      right: 0,
+                                      child: Container(
+                                        width: deviceWidth(context) > 750 ? 2 : 1,
+                                        // thickness of the line
+                                        height: deviceWidth(context) > 750
+                                            ? 120
+                                            : 80,
+                                        // adjust height here
+                                        color: Colors.grey, // border color
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(
+                                width: deviceWidth(context) > 750 ? 20 : 0,
+                              ),
+                              Expanded(
+                                child: Stack(
+                                  children: [
+                                    buildStatCard(
+                                      'Height',
+                                      record?.height ?? user.height ?? "0",
+                                      'lib/assets/sewing_tape_measure.png',
+                                      Colors.white,
+                                      context,
+                                      user,
+                                    ),
+                                    Positioned(
+                                      top: 30,
+                                      right: 0,
+                                      child: Container(
+                                        width: deviceWidth(context) > 750 ? 2 : 1,
+                                        // thickness of the line
+                                        height: deviceWidth(context) > 750
+                                            ? 120
+                                            : 80,
+                                        // adjust height here
+                                        color: Colors.grey, // border color
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: buildStatCard2(
+                                  'BMI',
+                                  record?.bmiValue?.toStringAsFixed(2) ?? '${user.bmi ?? 0}',
+                                  'lib/assets/Heartbeat2.png',
+                                  Colors.white,
+                                  context,
+                                  user,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Menu Items
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            children: [
+                              _buildMenuItem(
+                                'Edit Profile',
+                                'lib/assets/ht2.png',
+                                AppTheme.primaryColor,
+                                    () async {
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          EditProfilePage(userDetails: user),
+                                    ),
+                                  );
+                                  // Refresh profile data if edit was successful
+                                  if (result == true) {
+                                    _loadProfileData();
+                                  }
+                                },
+                              ),
+                              _buildMenuItem(
+                                'My Clinician',
+                                'lib/assets/ht4.png',
+                                Colors.blue,
+                                    () {
+                                  AppRouter.navigateTomyDoctor(context);
+                                },
+                              ),
+                              _buildMenuItem(
+                                'Manage Clinician Connection',
+                                'lib/assets/ht5.png',
+                                Colors.green,
+                                    () {
+                                  AppRouter.navigateToManageDoctor(context);
+                                },
+                              ),
+                              _buildMenuItem(
+                                'FAQ',
+                                'lib/assets/ht6.png',
+                                Colors.orange,
+                                    () {
+                                  AppRouter.navigateToPatientFAQ(context);
+                                },
+                              ),
+                              _buildMenuItem(
+                                'Contact Us',
+                                'lib/assets/ht7.png',
+                                Colors.purple,
+                                    () {
+                                  AppRouter.navigateToPatientContactUs(context);
+                                },
+                              ),
+                              _buildMenuItem(
+                                'Privacy Policy',
+                                'lib/assets/ht8.png',
+                                Colors.teal,
+                                    () {
+                                  AppRouter.navigateToPatientPrivacyPolicy(
+                                    context,
+                                  );
+                                },
+                              ),
+                              _buildMenuItem(
+                                'Terms & Conditions',
+                                'lib/assets/ht9.png',
+                                Colors.indigo,
+                                    () {
+                                  AppRouter.navigateToPatientTermsConditions(
+                                    context,
+                                  );
+                                },
+                              ),
+                              _buildMenuItem(
+                                'Logout',
+                                'lib/assets/ht10.png',
+                                Colors.red,
+                                    () => _showLogoutDialog(context),
+                                isLast: true,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              error: (e, st) {
                 final isOnline = ref.watch(isOnlineProvider);
 
                 return !isOnline
                     ? ConnectionUnavailable(
-                        title: HeartThriveStrings.offlineTitle,
-                        description: HeartThriveStrings.offlineMessage,
-                        buttonText: "Retry",
-                        onRetry: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  MyApp(initialToken: ref.watch(tokenProvider)),
-                            ),
-                          );
-                        },
-                      )
+                  title: HeartThriveStrings.offlineTitle,
+                  description: HeartThriveStrings.offlineMessage,
+                  buttonText: "Retry",
+                  onRetry: () async{
+                    final token = await SecureStorageUtils().read(StorageKeys.accessToken);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            MyApp(initialToken: token),
+                      ),
+                    );
+                  },
+                )
                     : ConnectionUnavailable(
-                        title: HeartThriveStrings.userServerIssueTitle,
-                        description:
-                            HeartThriveStrings.userServerIssueDescription,
-                        buttonText: "Retry",
-                        onRetry: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  MyApp(initialToken: ref.watch(tokenProvider)),
-                            ),
-                          );
-                        },
-                      );
-              }
-              return RefreshIndicator(
-                onRefresh: () => _refresh(),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 24),
-
-                      // Profile Section
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          children: [
-                            // Profile Image
-                            GestureDetector(
-                              onTap: () async {
-                                if (Platform.isIOS) {
-                                  showDialog(
-                                    context: context,
-                                    barrierDismissible: true,
-                                    builder: (context) {
-                                      return Dialog(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(16),
-                                          height: deviceWidth(context) > 750
-                                              ? 400
-                                              : 300,
-                                          child: Column(
-                                            children: [
-                                              Expanded(
-                                                child: ProfileImageUploader(
-                                                  userId: user.id,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                } else {
-                                  /* bool allowed = await _checkPhotoPermission();  // <-- permission check
-                                    if (!allowed) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text("Permission required to access photos")),
-                                      );
-                                      return;
-                                    }*/
-
-                                  showDialog(
-                                    context: context,
-                                    barrierDismissible: true,
-                                    builder: (context) {
-                                      return Dialog(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(16),
-                                          height: deviceWidth(context) > 750
-                                              ? 400
-                                              : 300,
-                                          child: Column(
-                                            children: [
-                                              Expanded(
-                                                child: ProfileImageUploader(
-                                                  userId: user.id,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                }
-                              },
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  // Profile Circle
-                                  Container(
-                                    width: deviceWidth(context) > 750
-                                        ? 200
-                                        : 100,
-                                    height: deviceWidth(context) > 750
-                                        ? 200
-                                        : 100,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: AppTheme.primaryColor.withValues(
-                                          alpha: 0.4,
-                                        ),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: ClipOval(
-                                      child: user.profileImage == null
-                                          ? Image.asset(
-                                              'lib/assets/default_profile_image_rounded.png',
-                                              fit: BoxFit.cover,
-                                              width: deviceWidth(context) > 750
-                                                  ? 200
-                                                  : 100,
-                                              height: deviceWidth(context) > 750
-                                                  ? 200
-                                                  : 100,
-                                            )
-                                          : Image.memory(
-                                              base64Decode(user.profileImage!),
-                                              gaplessPlayback: true,
-                                              width: deviceWidth(context) > 750
-                                                  ? 200
-                                                  : 100,
-                                              height: deviceWidth(context) > 750
-                                                  ? 200
-                                                  : 100,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (
-                                                    context,
-                                                    error,
-                                                    stackTrace,
-                                                  ) => Icon(
-                                                    Icons.account_circle,
-                                                    size:
-                                                        deviceWidth(context) >
-                                                            750
-                                                        ? 120
-                                                        : 80,
-                                                  ),
-                                            ),
-                                    ),
-                                  ),
-
-                                  // Edit Icon at bottom-right
-                                  /*Positioned(
-                                      bottom: 0,
-                                      right: 0,
-                                      child: Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.primaryColor,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: Colors.white, width: 2),
-                                        ),
-                                        child:  Image.asset(
-                                         "lib/assets/Edit_Profile.png"
-                                        ),
-                                      ),
-                                    )*/
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Container(
-                                      width: deviceWidth(context) > 750
-                                          ? 55
-                                          : 32,
-                                      height: deviceWidth(context) > 750
-                                          ? 55
-                                          : 32,
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primaryColor,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.white,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        Icons.edit,
-                                        color: Colors.white,
-                                        size: deviceWidth(context) > 750
-                                            ? 35
-                                            : 18,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16), // Name
-                            Text(
-                              '${user.firstname} ${user.lastname}',
-                              style: deviceWidth(context) > 750
-                                  ? AppTheme.title30
-                                  : AppTheme.title20,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            // Email
-                            Text(
-                              user.email!,
-                              style: TextStyle(
-                                fontSize: deviceWidth(context) > 750 ? 20 : 14,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
+                  title: HeartThriveStrings.userServerIssueTitle,
+                  description:
+                  HeartThriveStrings.userServerIssueDescription,
+                  buttonText: "Retry",
+                  onRetry: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            MyApp(initialToken: ref.watch(tokenProvider)),
                       ),
+                    );
+                  },
+                );
+              }, // SHOW OLD UI EVEN IN LOADING
+              loading: () => ProfileLoadingPlaceholder(),
+            ),
 
-                      const SizedBox(height: 15),
-
-                      // Stats Cards
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Stack(
-                                children: [
-                                  buildStatCard(
-                                    'Weight',
-                                    _getProfileValue(
-                                      'weight',
-                                      user.weight ?? "0",
-                                    ),
-                                    'lib/assets/Scale.png',
-                                    Colors.white,
-                                    context,
-                                    user,
-                                  ),
-                                  // Right-side shorter border line
-                                  Positioned(
-                                    top: 30,
-                                    right: 0,
-                                    child: Container(
-                                      width: deviceWidth(context) > 750 ? 2 : 1,
-                                      // thickness of the line
-                                      height: deviceWidth(context) > 750
-                                          ? 120
-                                          : 80,
-                                      // adjust height here
-                                      color: Colors.grey, // border color
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(
-                              width: deviceWidth(context) > 750 ? 20 : 0,
-                            ),
-                            Expanded(
-                              child: Stack(
-                                children: [
-                                  buildStatCard(
-                                    'Height',
-                                    _getProfileValue(
-                                      'height',
-                                      user.height ?? "0",
-                                    ),
-                                    'lib/assets/sewing_tape_measure.png',
-                                    Colors.white,
-                                    context,
-                                    user,
-                                  ),
-                                  Positioned(
-                                    top: 30,
-                                    right: 0,
-                                    child: Container(
-                                      width: deviceWidth(context) > 750 ? 2 : 1,
-                                      // thickness of the line
-                                      height: deviceWidth(context) > 750
-                                          ? 120
-                                          : 80,
-                                      // adjust height here
-                                      color: Colors.grey, // border color
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: buildStatCard2(
-                                'BMI',
-                                _getProfileValue('bmi', '${user.bmi ?? 0}'),
-                                'lib/assets/Heartbeat2.png',
-                                Colors.white,
-                                context,
-                                user,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Menu Items
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          children: [
-                            _buildMenuItem(
-                              'Edit Profile',
-                              'lib/assets/ht2.png',
-                              AppTheme.primaryColor,
-                              () async {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        EditProfilePage(userDetails: user),
-                                  ),
-                                );
-                                // Refresh profile data if edit was successful
-                                if (result == true) {
-                                  _loadProfileData();
-                                }
-                              },
-                            ),
-                            _buildMenuItem(
-                              'My Clinician',
-                              'lib/assets/ht4.png',
-                              Colors.blue,
-                              () {
-                                AppRouter.navigateTomyDoctor(context);
-                              },
-                            ),
-                            _buildMenuItem(
-                              'Manage Clinician Connection',
-                              'lib/assets/ht5.png',
-                              Colors.green,
-                              () {
-                                AppRouter.navigateToManageDoctor(context);
-                              },
-                            ),
-                            _buildMenuItem(
-                              'FAQ',
-                              'lib/assets/ht6.png',
-                              Colors.orange,
-                              () {
-                                AppRouter.navigateToPatientFAQ(context);
-                              },
-                            ),
-                            _buildMenuItem(
-                              'Contact Us',
-                              'lib/assets/ht7.png',
-                              Colors.purple,
-                              () {
-                                AppRouter.navigateToPatientContactUs(context);
-                              },
-                            ),
-                            _buildMenuItem(
-                              'Privacy Policy',
-                              'lib/assets/ht8.png',
-                              Colors.teal,
-                              () {
-                                AppRouter.navigateToPatientPrivacyPolicy(
-                                  context,
-                                );
-                              },
-                            ),
-                            _buildMenuItem(
-                              'Terms & Conditions',
-                              'lib/assets/ht9.png',
-                              Colors.indigo,
-                              () {
-                                AppRouter.navigateToPatientTermsConditions(
-                                  context,
-                                );
-                              },
-                            ),
-                            _buildMenuItem(
-                              'Logout',
-                              'lib/assets/ht10.png',
-                              Colors.red,
-                              () => _showLogoutDialog(context),
-                              isLast: true,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-                    ],
+            // ----------------------
+            // GLOBAL BLUR LOADING OVERLAY
+            // ----------------------
+            if (userDetailsAsync.isLoading)
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
+                  child: Container(
+                    color: Colors.white.withValues(alpha: 0.35),
+                    child: const Center(child: CircularProgressIndicator()),
                   ),
                 ),
-              );
-            },
-            error: (e, st) {
-              final isOnline = ref.watch(isOnlineProvider);
-
-              return !isOnline
-                  ? ConnectionUnavailable(
-                      title: HeartThriveStrings.offlineTitle,
-                      description: HeartThriveStrings.offlineMessage,
-                      buttonText: "Retry",
-                      onRetry: () async{
-                        final token = await SecureStorageUtils().read(StorageKeys.accessToken);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                MyApp(initialToken: token),
-                          ),
-                        );
-                      },
-                    )
-                  : ConnectionUnavailable(
-                      title: HeartThriveStrings.userServerIssueTitle,
-                      description:
-                          HeartThriveStrings.userServerIssueDescription,
-                      buttonText: "Retry",
-                      onRetry: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                MyApp(initialToken: ref.watch(tokenProvider)),
-                          ),
-                        );
-                      },
-                    );
-            }, // SHOW OLD UI EVEN IN LOADING
-            loading: () => ProfileLoadingPlaceholder(),
-          ),
-
-          // ----------------------
-          // GLOBAL BLUR LOADING OVERLAY
-          // ----------------------
-          if (userDetailsAsync.isLoading)
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
-                child: Container(
-                  color: Colors.white.withValues(alpha: 0.35),
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -690,12 +705,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   // }
 
   Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-    BuildContext context,
-  ) {
+      String title,
+      String value,
+      IconData icon,
+      Color color,
+      BuildContext context,
+      ) {
     return GestureDetector(
       onTap: () {
         _showEditBottomSheet(context, title, value);
@@ -744,10 +759,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   void _showEditBottomSheet(
-    BuildContext context,
-    String field,
-    String currentValue,
-  ) {
+      BuildContext context,
+      String field,
+      String currentValue,
+      ) {
     final TextEditingController controller = TextEditingController(
       text: currentValue,
     );
@@ -822,12 +837,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Widget _buildMenuItem(
-    String title,
-    String image,
-    Color iconColor,
-    VoidCallback onTap, {
-    bool isLast = false,
-  }) {
+      String title,
+      String image,
+      Color iconColor,
+      VoidCallback onTap, {
+        bool isLast = false,
+      }) {
     return Column(
       children: [
         InkWell(
@@ -984,7 +999,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             final secureStorage = SecureStorageUtils();
                             //final fcmToken = await secureStorage.read("fcm_token");
                             final authToken = await secureStorage.read(
-                             StorageKeys.accessToken,
+                              StorageKeys.accessToken,
                             );
                             if (fcmToken != null && user != null) {
                               unawaited(
@@ -1005,8 +1020,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           // 4️⃣ NAVIGATE LAST (AFTER CLEANUP)
                           if (context.mounted) {
                             //Navigator.of(context).popUntil((r) => r.isFirst);
-                           // AppRouter.navigateToLandingClear(context);
-                           // AppRouter.navigateToSignIn(context);
+                            // AppRouter.navigateToLandingClear(context);
+                            // AppRouter.navigateToSignIn(context);
                             Navigator.pushAndRemoveUntil(
                                 context, MaterialPageRoute(builder: (context)=>LandingPage()), (_)=>false);
                           }
@@ -1079,11 +1094,11 @@ class ProfileLoadingPlaceholder extends StatelessWidget {
 
   // Mock menu item (same look as _buildMenuItem)
   Widget _buildMockMenuItem(
-    String title,
-    String iconPath,
-    Color color, {
-    bool isLast = false,
-  }) {
+      String title,
+      String iconPath,
+      Color color, {
+        bool isLast = false,
+      }) {
     return Container(
       margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
       decoration: BoxDecoration(

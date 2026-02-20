@@ -175,7 +175,7 @@ class _DOBFieldState extends State<DOBField> {
         color: Colors.black87,
       ),
       validator: widget.validator ?? _defaultValidator, // <-- use external validator if provided
-      inputFormatters: [DOBTextInputFormatter()],
+      inputFormatters: [CleanDateFormatter()],
       decoration: InputDecoration(
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8.0),
@@ -185,21 +185,21 @@ class _DOBFieldState extends State<DOBField> {
             borderRadius: BorderRadius.circular(8.0),
             borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.0),
           ),
-        hintText: widget.hintText,
-        hintStyle: TextStyle(fontSize: deviceWidth(context)>750? 20.0:15.0, color: Colors.grey),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 16.0),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        suffixIcon: IconButton(
-          icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
-          onPressed: () async {
-            _dobFocusNode.unfocus();
-            await _pickDate();
-          },
-        ),
+          hintText: widget.hintText,
+          hintStyle: TextStyle(fontSize: deviceWidth(context)>750? 20.0:15.0, color: Colors.grey),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 16.0),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
+            onPressed: () async {
+              _dobFocusNode.unfocus();
+              await _pickDate();
+            },
+          ),
           errorStyle: TextStyle(
               fontSize: deviceWidth(context)>750?18:12
           )
@@ -209,27 +209,119 @@ class _DOBFieldState extends State<DOBField> {
   }
 }
 
-class DOBTextInputFormatter extends TextInputFormatter {
+class CleanDateFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    String digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), "");
-    if (digits.length > 8) digits = digits.substring(0, 8);
+      TextEditingValue oldValue,
+      TextEditingValue newValue,
+      ) {
 
-    String formatted = "";
-    if (digits.isNotEmpty) {
-      formatted += digits.substring(0, digits.length.clamp(0, 2));
+    // Allow deletion naturally
+    if (newValue.text.length < oldValue.text.length) {
+      return newValue;
     }
-    if (digits.length > 2) {
-      formatted += "/" + digits.substring(2, digits.length.clamp(2, 4));
+
+    String text = newValue.text;
+    int cursor = newValue.selection.baseOffset;
+
+    // Auto insert slash after 2 digits
+    if (text.length == 2 && !text.contains('/')) {
+      text = '$text/';
+      cursor++;
     }
-    if (digits.length > 4) {
-      formatted += "/" + digits.substring(4);
+
+    // Auto insert slash after 5 characters (MM/DD)
+    if (text.length == 5 && text[4] != '/') {
+      text = '${text.substring(0, 5)}/';
+      cursor++;
+    }
+
+    // Limit length
+    if (text.length > 10) {
+      text = text.substring(0, 10);
+      cursor = cursor.clamp(0, 10);
     }
 
     return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
+      text: text,
+      selection: TextSelection.collapsed(offset: cursor),
     );
+  }
+}
+class DOBTextInputFormatter extends TextInputFormatter {
+  static const _template = "MM/DD/YYYY";
+  static const _maxLength = 10;
+
+  bool _isDigit(String s) => RegExp(r'\d').hasMatch(s);
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue,
+      TextEditingValue newValue,
+      ) {
+    String oldText = _normalize(oldValue.text);
+    int cursor = newValue.selection.baseOffset;
+
+    // Detect deletion
+    if (newValue.text.length < oldValue.text.length) {
+      int deleteIndex = oldValue.selection.baseOffset - 1;
+      if (deleteIndex < 0) deleteIndex = 0;
+
+      if (deleteIndex == 2 || deleteIndex == 5) {
+        deleteIndex--; // skip /
+      }
+
+      oldText = _replaceAt(oldText, deleteIndex, '');
+      cursor = deleteIndex;
+    }
+
+    // Detect insertion
+    if (newValue.text.length > oldValue.text.length) {
+      String inserted =
+      newValue.text.replaceFirst(oldValue.text, '');
+      if (_isDigit(inserted)) {
+        if (cursor == 2 || cursor == 5) cursor++;
+        oldText = _replaceAt(oldText, cursor - 1, inserted);
+      }
+    }
+
+    String result = _clean(oldText);
+
+    return TextEditingValue(
+      text: result,
+      selection: TextSelection.collapsed(
+        offset: cursor.clamp(0, result.length),
+      ),
+    );
+  }
+
+  String _normalize(String text) {
+    List<String> chars = List.filled(_maxLength, '');
+    for (int i = 0, j = 0; i < _maxLength && j < text.length; i++) {
+      if (i == 2 || i == 5) {
+        chars[i] = '/';
+      } else if (_isDigit(text[j])) {
+        chars[i] = text[j++];
+      } else {
+        j++;
+      }
+    }
+    chars[2] = '/';
+    chars[5] = '/';
+    return chars.join();
+  }
+
+  String _replaceAt(String text, int index, String value) {
+    if (index < 0 || index >= _maxLength) return text;
+    List<String> chars = text.split('');
+    chars[index] = value;
+    return chars.join();
+  }
+
+  String _clean(String text) {
+    List<String> chars = text.split('');
+    chars[2] = '/';
+    chars[5] = '/';
+    return chars.join().replaceAll(RegExp(r'\s+$'), '');
   }
 }

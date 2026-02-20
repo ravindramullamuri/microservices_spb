@@ -239,96 +239,78 @@ class _MealLogsPageState extends ConsumerState<MealLogsPage> with RouteAware {
     final nutrientAsync = ref.watch(todayNutrientProvider);
     final logsAsync = ref.watch(mealLogsProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Center(child: const Text('Today Meal Logs')),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(widget.isHome! ? 24 : 0),
-          ),
-        ),
-        leading: widget.isHome!
-            ? ProfileAvatar()
-            : GestureDetector(
-                onTap: () {
-                  debugPrint("widget.navFromPage : ${widget.pageType}");
-                  //debugPrint("Result ${widget.navFromPage == NavPageType.profile.name}");
-                  if (widget.pageType == NavPageType.home.name ||
-                      widget.pageType == null) {
-                    AppRouter.replaceWithHome(context);
-                  } else {
-                    Navigator.pop(context);
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Image.asset("lib/assets/Frame.png"),
-                ),
-              ),
-        actions: [
-          widget.isHome!?Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: NotificationBadgeIcon(),
-          ):actionMenuItemResponse(
-            context,
-            onOpened: () {
-              _skipNextPopRefresh = true;
-              debugPrint('Menu opened');
-            },
-            onCanceled: () {
-              _skipNextPopRefresh = true;
-              debugPrint('Menu dismissed (outside tap)');
-              // ❗ stop API calls here if needed
-            },
-            onSelected: (result) {
-              debugPrint('Selected: $result');
-              if (result == ActionMenuResult.goHome) {
-                AppRouter.navigateToHome(context);
-              }
-            },
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _onPullToRefresh,
-        child: Column(
-          children: [
-            // Daily Intake Card
-            Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 10.0,
-                vertical: 10,
-              ),
-              padding: const EdgeInsets.all(5.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.shade300,
-                    spreadRadius: 1,
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: nutrientAsync.when(
-                loading: () => const SizedBox(
-                  height: 150,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (e, _) => DailyMealIntakeCard(nutrients: []),
-                data: (nutrients) => DailyMealIntakeCard(
-                  key: ValueKey(nutrients.hashCode + DateTime.now().day),
-                  nutrients: nutrients,
-                ),
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        print("DEmoTeST123");
+        debugPrint("widget.navFromPage : ${widget.pageType}");
+        //debugPrint("Result ${widget.navFromPage == NavPageType.profile.name}");
+        if (widget.pageType == NavPageType.home.name ||
+            widget.pageType == null) {
+          AppRouter.replaceWithHome(context);
+        } else {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Center(child: const Text('Today Meal Logs')),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(widget.isHome! ? 24 : 0),
             ),
-
-            // Logs Section
-            Expanded(
-              child: Container(
+          ),
+          leading: widget.isHome!
+              ? ProfileAvatar()
+              : GestureDetector(
+                  onTap: () {
+                    print("DEmoTeST123");
+                    debugPrint("widget.navFromPage : ${widget.pageType}");
+                    //debugPrint("Result ${widget.navFromPage == NavPageType.profile.name}");
+                    if (widget.pageType == NavPageType.home.name ||
+                        widget.pageType == null) {
+                      AppRouter.replaceWithHome(context);
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Image.asset("lib/assets/Frame.png"),
+                  ),
+                ),
+          actions: [
+            widget.isHome!?Padding(
+              padding: EdgeInsets.only(right: 16.0),
+              child: NotificationBadgeIcon(),
+            ):actionMenuItemResponse(
+              context,
+              onOpened: () {
+                _skipNextPopRefresh = true;
+                debugPrint('Menu opened');
+              },
+              onCanceled: () {
+                _skipNextPopRefresh = true;
+                debugPrint('Menu dismissed (outside tap)');
+                // ❗ stop API calls here if needed
+              },
+              onSelected: (result) {
+                debugPrint('Selected: $result');
+                if (result == ActionMenuResult.goHome) {
+                  AppRouter.navigateToHome(context);
+                }
+              },
+            ),
+          ],
+        ),
+        body: RefreshIndicator(
+          onRefresh: _onPullToRefresh,
+          child: Column(
+            children: [
+              // Daily Intake Card
+              Container(
                 margin: const EdgeInsets.symmetric(
                   horizontal: 10.0,
                   vertical: 10,
@@ -346,58 +328,92 @@ class _MealLogsPageState extends ConsumerState<MealLogsPage> with RouteAware {
                     ),
                   ],
                 ),
-                child: Column(
-                  children: [
-                    _buildFoodToggle(),
-                    _buildMealTabs(),
-                    Expanded(
-                      child: logsAsync.when(
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (e, _) => noDataUI(mapException(e).message),
-                        data: (logs) {
-                          debugPrint('UI End : ${DateTime.now()}');
-                          final filteredLogs = getFilteredLogs(logs);
-
-                          if (filteredLogs.isEmpty) {
-                            return _buildEmptyUI(
-                              index: _selectedMealIndex == 0
-                                  ? null
-                                  : _selectedMealIndex,
-                            );
-                          }
-
-                          return ListView.builder(
-                            key: ValueKey(logs.length),
-                            controller: _controller,
-                            itemCount:
-                                filteredLogs.length +
-                                (logsAsync.isLoading ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              if (index >= filteredLogs.length) {
-                                return const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: FoodNutrientsCard(
-                                  foodLogEntry: filteredLogs[index],
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                child: nutrientAsync.when(
+                  loading: () => const SizedBox(
+                    height: 150,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (e, _) => DailyMealIntakeCard(nutrients: []),
+                  data: (nutrients) => DailyMealIntakeCard(
+                    key: ValueKey(nutrients.hashCode + DateTime.now().day),
+                    nutrients: nutrients,
+                  ),
                 ),
               ),
-            ),
-          ],
+
+              // Logs Section
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 10.0,
+                    vertical: 10,
+                  ),
+                  padding: const EdgeInsets.all(5.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade300,
+                        spreadRadius: 1,
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildFoodToggle(),
+                      _buildMealTabs(),
+                      Expanded(
+                        child: logsAsync.when(
+                          loading: () =>
+                              const Center(child: CircularProgressIndicator()),
+                          error: (e, _) => noDataUI(mapException(e).message),
+                          data: (logs) {
+                            debugPrint('UI End : ${DateTime.now()}');
+                            final filteredLogs = getFilteredLogs(logs);
+
+                            if (filteredLogs.isEmpty) {
+                              return _buildEmptyUI(
+                                index: _selectedMealIndex == 0
+                                    ? null
+                                    : _selectedMealIndex,
+                              );
+                            }
+
+                            return ListView.builder(
+                              key: ValueKey(logs.length),
+                              controller: _controller,
+                              itemCount:
+                                  filteredLogs.length +
+                                  (logsAsync.isLoading ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index >= filteredLogs.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: FoodNutrientsCard(
+                                    foodLogEntry: filteredLogs[index],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -535,23 +551,25 @@ class _MealLogsPageState extends ConsumerState<MealLogsPage> with RouteAware {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _getMessageOfMealType(index: index),
-              textAlign: TextAlign.center,
-              style: AppTheme.title16.copyWith(
-                fontSize: deviceWidth(context) > 830 ? 20 : 16,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _getMessageOfMealType(index: index),
+                textAlign: TextAlign.center,
+                style: AppTheme.title16.copyWith(
+                  fontSize: deviceWidth(context) > 830 ? 20 : 16,
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Image.asset(
-              _getImageOfMealType(index: index),
-              width: deviceWidth(context) > 830 ? 300 : 200,
-              fit: BoxFit.contain,
-            ),
-          ],
+              const SizedBox(height: 10),
+              Image.asset(
+                _getImageOfMealType(index: index),
+                width: deviceWidth(context) > 830 ? 300 : 200,
+                fit: BoxFit.contain,
+              ),
+            ],
+          ),
         ),
       ),
     );

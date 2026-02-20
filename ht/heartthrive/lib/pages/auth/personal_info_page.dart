@@ -317,7 +317,7 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(20),
         child: AppBar(
-         leading: SizedBox(),
+          leading: SizedBox(),
         ),
       ),
       body: Ink(
@@ -359,7 +359,7 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
                       const SizedBox(height: 8),
 
                       // Subtitle
-                       Text(
+                      Text(
                         'Let\'s start with your basic details.',
                         style: TextStyle(
                           fontSize: deviceWidth(context)>750?20:16,
@@ -374,22 +374,13 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
                         // suffixIcon: const Icon(Icons.person, color: Colors.grey),
                         inputFormatters: [
                           FirstLetterAlphaAlnumFormatter(),          // ✅ allows spaces now
-                          LengthLimitingTextInputFormatter(30),      // ✅ limit to 30 chars
+                          LengthLimitingTextInputFormatter(75),      // ✅ limit to 75 chars
                         ],
                         validator: (value) {
                           value = value?.trim() ?? "";
 
                           // Required
                           if (value.isEmpty) return 'Name is required.';
-
-                          // Split into words and check the first actual word
-                          final words = value.split(' ').where((w) => w.isNotEmpty).toList();
-                          if (words.isNotEmpty) {
-                            final firstWord = words.first;
-                            if (firstWord.length < 3) {
-                              return 'Name must be between 3 and 75 characters.';
-                            }
-                          }
 
                           // Full length check (backend rule)
                           if (value.length < 3 || value.length > 75) {
@@ -533,9 +524,9 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
                                       borderRadius: BorderRadius.circular(8.0),
                                       borderSide: const BorderSide(color: Colors.red, width: 1.0),
                                     ),
-                                      errorStyle: TextStyle(
-                                          fontSize: deviceWidth(context)>750?18:12
-                                      ),
+                                    errorStyle: TextStyle(
+                                        fontSize: deviceWidth(context)>750?18:12
+                                    ),
                                     focusedErrorBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8.0),
                                       borderSide: const BorderSide(color: Colors.red, width: 1.0),
@@ -658,7 +649,7 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
 
                       // Additional Options (only for patients)
                       if (widget.userType == 'patient') ...[
-                         Text(
+                        Text(
                           'Would you like to:',
                           style: TextStyle(
                             fontSize: deviceWidth(context)>750?20:16,
@@ -680,7 +671,7 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
                               },
                               activeColor: AppTheme.primaryColor,
                             ),
-                             Expanded(
+                            Expanded(
                               child: Text(
                                 'Provide Health Info',
                                 style: TextStyle(
@@ -695,7 +686,7 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
                         // 🔽 Show Health Info Section when checkbox is checked
                         if (_provideHealthInfo) ...[
                           const SizedBox(height: 12),
-                           Text(
+                          Text(
                             'Health Info',
                             style: TextStyle(
                               fontSize: deviceWidth(context)>750?20:16,
@@ -704,7 +695,7 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                           Text(
+                          Text(
                             "This helps us assess your heart risk.",
                             style: TextStyle(
                               fontSize: deviceWidth(context)>750?18:14,
@@ -900,7 +891,7 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
                               },
                               activeColor: AppTheme.primaryColor,
                             ),
-                             Expanded(
+                            Expanded(
                               child: Text(
                                 'Connect with a Clinician',
                                 style: TextStyle(
@@ -966,11 +957,11 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
                                   color: Colors.black,
                                 ),
                                 children: [
-                                   TextSpan(
-                                    text: 'I agree to the heart thrive ',
-                                    style: TextStyle(
-                                      fontSize: deviceWidth(context)>750?18:14,
-                                    )
+                                  TextSpan(
+                                      text: 'I agree to the heart thrive ',
+                                      style: TextStyle(
+                                        fontSize: deviceWidth(context)>750?18:14,
+                                      )
                                   ),
                                   TextSpan(
                                     text: 'Terms of Service',
@@ -992,7 +983,7 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
                                                 child: Column(
                                                   crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
-                                                     Text(
+                                                    Text(
                                                       'Terms & Conditions (Terms of Use)',
                                                       style: TextStyle(
                                                         fontSize: deviceWidth(context)>750?20:16,

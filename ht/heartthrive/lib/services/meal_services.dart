@@ -803,7 +803,7 @@ class MealService {
       "foodItemName": foodItemName,
       "brandName": brandName ?? "",
       "foodCategoryId": foodCategoryId,
-      "foodTypeId": foodTypeId,
+      "foodItemId": foodTypeId == 0?null:foodTypeId,
       "sodiumAmount": sodiumAmount,
       "caloriesAmount": caloriesAmount,
       "carbsAmount": carbsAmount,
